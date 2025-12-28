@@ -152,7 +152,7 @@
         aria-label="Show Daily Statistics"
       >
         <span class="fa-icon" aria-hidden="true">📊</span>
-        <span class="fa-label">Daily Stats</span>
+        <span class="fa-label">Stats overview</span>
       </button>
     </div>
 
@@ -258,7 +258,7 @@
       </button>
       <div class="drag-hint">drag anywhere</div>
       <div class="live-stats" id="live-stats">
-        <h3>📊 Daily Statistics</h3>
+        <h3>Statistics Overview</h3>
         <div class="stat-item">
           <span class="stat-icon">�</span>
           <span class="stat-label">Loading stats...</span>
@@ -688,7 +688,7 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
 
         // Show loading state
         statsContainer.innerHTML = `
-        <h3>📊 Daily Statistics</h3>
+        <h3>Statistics Overview</h3>
         <div class="stat-item">
           <span class="stat-icon">🔄</span>
           <span class="stat-label">Loading data...</span>
@@ -710,15 +710,15 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
               console.log("✅ Processing stats:", stats);
 
               statsContainer.innerHTML = `
-              <h3>📊 Daily Statistics</h3>
+              <h3>Statistics Overview</h3>
               <div class="stat-item">
                 <span class="stat-icon">🏆</span>
-                <span class="stat-label">Total Points:</span>
+                <span class="stat-label">Total Team Points:</span>
                 <span class="stat-value">${stats.total_points.toLocaleString()}</span>
               </div>
               <div class="stat-item">
                 <span class="stat-icon">👥</span>
-                <span class="stat-label">Active Members:</span>
+                <span class="stat-label">Members:</span>
                 <span class="stat-value">${stats.active_members}</span>
               </div>
               <div class="stat-item">
