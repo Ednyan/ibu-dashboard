@@ -40,7 +40,7 @@
           <div class="title-section">
             <h1 class="main-title animate-slide-up">TEAM DATA VISUALIZATION</h1>
             <p class="subtitle animate-slide-up" style="animation-delay: 0.2s">
-              New CSV received {{ time_ago }} ({{ latest_date }})
+              New data received {{ time_ago }} ({{ latest_date }})
             </p>
           </div>
           <div class="header-buttons">
@@ -49,7 +49,7 @@
               style="animation-delay: 0.4s"
               onclick="downloadCSVFiles()"
             >
-              <span>📥 Download Data</span>
+              <span>Download Data</span>
             </button>
             <button
               class="nav-button animate-slide-up"
@@ -1190,13 +1190,13 @@
     <div id="downloadModal" class="download-modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>📥 Download CSV Data</h3>
+          <h3>Download Data</h3>
           <span class="modal-close" onclick="closeDownloadModal()"
             >&times;</span
           >
         </div>
         <div class="modal-body">
-          <p>Select the date range for the CSV data you want to download:</p>
+          <p>Select the date range for the data you want to download:</p>
 
           <div class="date-range-section">
             <div class="date-input-group">

@@ -230,7 +230,7 @@
         <!-- Information section -->
         <div class="info-container">
           <p class="update-info" id="latest_date">
-            New CSV received {{ time_ago }}
+            New data received {{ time_ago }}
           </p>
           <p class="app-info">Data from {{ latest_date }}</p>
 
@@ -797,9 +797,9 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
               const latestDateElement = document.getElementById("latest_date");
               const appInfoElement = document.querySelector(".app-info");
 
-              // Update the "New CSV received" text
+              // Update the "New data received" text
               if (latestDateElement) {
-                latestDateElement.textContent = `New CSV received ${data.time_ago}`;
+                latestDateElement.textContent = `New data received ${data.time_ago}`;
               }
 
               // Update the "Data from" text

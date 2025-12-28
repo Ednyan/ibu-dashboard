@@ -26,7 +26,7 @@
         <div class="title-section">
           <h1 class="main-title animate-slide-up">MEMBER TRACKING</h1>
           <p class="subtitle animate-slide-up" style="animation-delay: 0.2s;">
-            New CSV received {{ time_ago }} ({{ latest_date }})
+            New data received {{ time_ago }} ({{ latest_date }})
           </p>
         </div>
         <a class="nav-button animate-slide-up" style="animation-delay: 0.4s; text-decoration: none;" href="{{ url_for('index') }}"">
@@ -311,7 +311,7 @@
         if (member.post_probation_status === 'too_early') {
           statusMessage = 'Member recently completed probation. Post-probation evaluation will begin after 90 days.';
         } else if (member.post_probation_status === 'insufficient_data') {
-          statusMessage = 'Not enough CSV data available to properly evaluate post-probation performance. More historical data needed.';
+          statusMessage = 'Not enough data available to properly evaluate post-probation performance. More historical data needed.';
         } else if (member.post_probation_status === 'non_compliant') {
           statusMessage = 'Member is not consistently meeting the post-probation requirement of 3M points per 90-day period.';
         } else if (member.post_probation_status === 'on_track') {
