@@ -1151,8 +1151,8 @@ def get_simple_stats():
         total_points = int(df["Points"].sum())
         active_members = len(df[df["Points"] > 0])
 
-        # Get top 5 performers
-        top_performers = df[df["Points"] > 0].nlargest(5, "Points").to_dict("records")
+        # Get top 10 performers
+        top_performers = df[df["Points"] > 0].nlargest(10, "Points").to_dict("records")
 
         return jsonify(
             {
