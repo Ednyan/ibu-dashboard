@@ -861,13 +861,13 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
         setTimeout(() => {
           console.log("🔄 Loading stats...");
           loadLiveStats();
-        }, 1000);
+        });
 
         // Start monitoring for file changes
         setTimeout(() => {
           console.log("🔄 Starting file monitoring...");
           startFileMonitoring();
-        });
+        }, 1500);
       });
     </script>
     <script>
