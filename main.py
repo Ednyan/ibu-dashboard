@@ -1237,59 +1237,111 @@ def get_latest_file_info():
 
 @app.route("/get_updates")
 def get_updates():
-    """Read update history from updates.txt file"""
     try:
-        updates_file = os.path.join("static", "updates.txt")
+        changelog_file = os.path.join("CHANGELOG.md")
 
-        if not os.path.exists(updates_file):
+        if not os.path.exists(changelog_file):
             return jsonify(
-                {"success": False, "error": "Updates file not found", "updates": []}
+                {"success": False, "error": "Changelog file not found", "updates": []}
             )
 
-        updates = []
-
-        with open(updates_file, "r", encoding="utf-8") as f:
+        with open(changelog_file, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
-        for line in lines:
-            line = line.strip()
+        # Matches:
+        # ## [1.4.3] - 2025-08-31
+        # ## [Unreleased]
+        header_re = re.compile(
+            r"^\s*##\s*\[(?P<version>[^\]]+)\]\s*(?:-\s*(?P<date>\d{4}-\d{2}-\d{2}))?\s*$"
+        )
+        section_re = re.compile(r"^\s*###\s+(?P<section>.+?)\s*$")
+        bullet_re = re.compile(r"^\s*[-*]\s+(?P<item>.+?)\s*$")
+        hr_re = re.compile(r"^\s*(---|___|\*\*\*)\s*$")
 
-            # Skip comments and empty lines
-            if not line or line.startswith("#"):
+        updates = []
+        current_update = None
+        current_section = None
+
+        for raw in lines:
+            line = raw.rstrip("\n")
+
+            # Skip top-level title/comments/empty lines and horizontal rules
+            if not line.strip() or line.lstrip().startswith("# ") or hr_re.match(line):
                 continue
 
-            try:
-                # Parse format: VERSION|DATE|TITLE|FEATURES (semicolon separated)
-                parts = line.split("|")
-                if len(parts) >= 4:
-                    version = parts[0].strip()
-                    date = parts[1].strip()
-                    title = parts[2].strip()
-                    features_text = parts[3].strip()
+            # New version block?
+            m = header_re.match(line)
+            if m:
+                # Close previous block
+                if current_update is not None:
+                    updates.append(current_update)
 
-                    # Split features by semicolon
-                    features = [
-                        f.strip() for f in features_text.split(";") if f.strip()
-                    ]
+                version = m.group("version").strip()
+                date = (m.group("date") or "").strip()
 
-                    update_item = {
-                        "version": version,
-                        "date": date,
-                        "title": title,
-                        "features": features,
-                        "is_current": version.lower().startswith("current"),
-                    }
-
-                    updates.append(update_item)
-
-            except Exception as e:
-                print(f"Error parsing update line '{line}': {e}")
+                current_update = {
+                    "version": version
+                    if not version.lower().startswith("v")
+                    else version,
+                    "date": date,  # Keep a Changelog typically uses YYYY-MM-DD
+                    "title": "",  # Optional; you can set this if you add a line in the md
+                    "features": [],
+                    "is_current": False,
+                }
+                current_section = None
                 continue
+
+            # Ignore anything before the first "## [x.y.z]" header
+            if current_update is None:
+                continue
+
+            # Section header? (Added/Changed/Fixed/Improved/etc.)
+            m = section_re.match(line)
+            if m:
+                current_section = m.group("section").strip()
+                continue
+
+            # Bullet item?
+            m = bullet_re.match(line)
+            if m:
+                item = m.group("item").strip()
+
+                # Flatten as strings like "Added: foo" so your frontend can stay simple.
+                if current_section:
+                    current_update["features"].append(f"{current_section}: {item}")
+                else:
+                    current_update["features"].append(item)
+                continue
+
+            # Optional: use the first non-empty, non-heading, non-bullet line after the version header as a title
+            # (If you add short summaries later, this will pick them up.)
+            if not current_update["title"]:
+                # Avoid treating "The format is..." boilerplate as a title; keep it simple.
+                if not line.lstrip().startswith(("#", "##", "###", "-", "*")):
+                    current_update["title"] = line.strip()
+
+        # Append the final block
+        if current_update is not None:
+            updates.append(current_update)
+
+        # Mark the most recent version as current (skip "Unreleased" if present and empty)
+        # Assumes changelog is ordered newest -> oldest, which is standard.
+        for u in updates:
+            u["is_current"] = False
+
+        # Prefer first real version (not "Unreleased") as current
+        current_idx = None
+        for i, u in enumerate(updates):
+            if u["version"].lower() != "unreleased":
+                current_idx = i
+                break
+        if current_idx is not None:
+            updates[current_idx]["is_current"] = True
 
         return jsonify({"success": True, "updates": updates})
 
     except Exception as e:
-        print(f"Error reading updates file: {str(e)}")
+        print(f"Error reading changelog file: {str(e)}")
         return jsonify({"success": False, "error": str(e), "updates": []})
 
 
