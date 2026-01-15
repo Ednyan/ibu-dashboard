@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-1-14
+
+### Improved
+
+- Stats overview is now at a fixed location and as some visual enhancements
+
+---
+
 ## [1.1.0] - 2025-12-28
 
 ### Added
