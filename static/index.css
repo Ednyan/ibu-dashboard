@@ -752,7 +752,7 @@ body {
   background: rgba(42, 42, 42, 0.9);
   border-radius: 16px;
   backdrop-filter: blur(15px);
-  border: 1px solid rgba(224, 97, 80, 0.3);
+  border: 1px solid rgba(224, 97, 80, 0.508);
   min-width: 280px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   visibility: visible !important;

@@ -248,10 +248,6 @@
 
     <!-- Move stats panel OUTSIDE the landing-container for proper positioning -->
     <div class="stats-panel loaded" id="stats-panel">
-      <button id="stats-minimize-btn" title="Minimize" aria-label="Minimize">
-        –
-      </button>
-      <div class="drag-hint">drag anywhere</div>
       <div class="live-stats" id="live-stats">
         <h3>Statistics Overview</h3>
         <div class="stat-item">
@@ -474,7 +470,6 @@
           liveStats.style.visibility = "visible";
           liveStats.style.opacity = "1";
           liveStats.style.background = "rgba(42, 42, 42, 0.95)";
-          liveStats.style.border = "3px solid rgba(224, 97, 80, 0.8)";
           console.log("✅ Forced live stats visibility");
         } else {
           console.error("❌ Live stats element not found!");
