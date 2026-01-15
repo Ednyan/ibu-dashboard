@@ -467,7 +467,7 @@
         console.log("🔍 Live stats element:", liveStats);
 
         // Initialize draggable/minimizable stats panel
-        initStatsPanelWidget();
+        //initStatsPanelWidget();
 
         if (liveStats) {
           liveStats.style.display = "flex";
@@ -1049,8 +1049,8 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
         }
 
         // Start drag from anywhere inside panel
-        panel.addEventListener("mousedown", onDown);
-        panel.addEventListener("touchstart", onDown, { passive: true });
+        //panel.addEventListener("mousedown", onDown);
+        //panel.addEventListener("touchstart", onDown, { passive: true });
 
         // Prevent click-through if it was a drag
         panel.addEventListener(
