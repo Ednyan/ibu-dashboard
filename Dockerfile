@@ -1,15 +1,16 @@
-FROM archlinux:latest
+FROM debian:trixie-slim
 
-RUN pacman -Syu --noconfirm rustup uv python cronie base-devel && pacman -Scc --noconfirm 
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl libssl3 curl cron rustup build-essential python3 && rm -rf /var/lib/apt/lists/*
 RUN rustup default stable
+RUN curl -Ls https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
 
 WORKDIR /ibu
 COPY . .
 RUN ./scripts/setup.sh uv
 RUN cargo clean
+RUN echo "0 19 * * * root cd /ibu && mkdir -p /ibu/logs && /ibu/.venv/bin/python /ibu/ibu_dashboard/sheepit_scraper.py >> /ibu/logs/cron.log 2>&1" > /etc/cron.d/ibu && chmod 0644 /etc/cron.d/ibu
 
-RUN mkdir -p /var/spool/cron
-RUN echo "0 19 * * * cd /ibu && mkdir -p /ibu/logs && /ibu/.venv/bin/python /ibu/ibu_dashboard/sheepit_scraper.py >> /ibu/logs/cron.log 2>&1" > /var/spool/cron/root
 EXPOSE 5000
 
 ENTRYPOINT ["./scripts/docker-entrypoint.sh"]

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 # Python setup
 if [[ "$1" == "uv" ]]; then
     echo "Creating venv"
