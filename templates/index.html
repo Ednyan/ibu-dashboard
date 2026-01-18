@@ -22,7 +22,7 @@
     <link
       rel="stylesheet"
       type="text/css"
-      href="{{ url_for('static', filename='index.css') }}?v={{ range(1000, 9999) | random }}"
+      href="{{ url_for('static', filename='index.css') }}?v=1.0"
     />
     <style>
       /* Ensure hidden state beats global !important display */
@@ -93,20 +93,14 @@
     <!-- Particles container -->
     <div class="particles-container" id="particles"></div>
 
-    <!-- Update History Sidebar -->
     <div class="update-history-sidebar" id="update-sidebar">
       <div class="sidebar-header">
-        <h3>📋 Update History</h3>
+        <h3>Updates</h3>
         <button class="sidebar-toggle" id="sidebar-toggle">←</button>
       </div>
       <div class="sidebar-content">
         <!-- Updates will be loaded dynamically -->
-        <div id="updates-container">
-          <div class="stat-item">
-            <span class="stat-icon">🔄</span>
-            <span class="stat-label">Loading updates...</span>
-          </div>
-        </div>
+        <div id="updates-container"></div>
       </div>
     </div>
 
@@ -411,7 +405,7 @@
       // Particle system
       function createParticles() {
         const container = document.getElementById("particles");
-        const particleCount = 15;
+        const particleCount = 50;
 
         for (let i = 0; i < particleCount; i++) {
           const particle = document.createElement("div");
@@ -474,9 +468,6 @@
 
         console.log("🔍 Stats panel element:", statsPanel);
         console.log("🔍 Live stats element:", liveStats);
-
-        // Initialize draggable/minimizable stats panel
-        //initStatsPanelWidget();
 
         if (liveStats) {
           liveStats.style.display = "flex";
@@ -607,68 +598,6 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
             textElement.innerHTML = "";
           }, 600);
         });
-
-        // Close panel function
-        function closePanel() {
-          isExpanded = false;
-          if (window.innerWidth <= 768) {
-            // Mobile: Hide full screen panel
-            textPanel.classList.remove("active");
-          } else {
-            // Desktop: Slide back
-            mainContainer.style.transform = "translateX(0)";
-            textPanel.style.transform = "translateX(100%)";
-          }
-          textPanel.style.opacity = "0";
-
-          // Reset text content
-          typewriterText.innerHTML = "";
-          typewriterText.classList.remove("fade-in");
-        }
-
-        // Smooth reveal effect (replaces typewriter)
-        function startSmoothReveal() {
-          const text = `We are Intelligent Beings United!
-        Welcome to our dashboard, your comprehensive tool for analyzing team performance and statistics.
-
-This dashboard provides daily insights into team data, allowing you to:
-
-• Track team members points
-• Analyze performance metrics over time
-• See individual team member contributions
-• Export data for further analysis
-
-The system automatically scrapes and updates team information, ensuring you always have the latest data at your fingertips.
-
-For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" target="_blank" style="color: rgba(224, 97, 80, 1); text-decoration: none;">I.B.U. Discord Server</a> !`;
-
-          // Set text content immediately
-          typewriterText.innerHTML = text.replace(/\n/g, "<br>");
-
-          // Add fade-in class for smooth appearance
-          setTimeout(() => {
-            typewriterText.classList.add("fade-in");
-          }, 200);
-        }
-
-        // Update the smoothReveal function in the HTML file
-        function smoothReveal() {
-          const titleElement = document.querySelector(".text-content h2");
-          const textElement = document.getElementById("typewriter-text");
-
-          // Set the text content
-          textElement.innerHTML =
-            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-
-          // Trigger fade-in animations
-          setTimeout(() => {
-            titleElement.classList.add("fade-in");
-          }, 200);
-
-          setTimeout(() => {
-            textElement.classList.add("fade-in");
-          }, 500);
-        }
 
         // Handle window resize
         window.addEventListener("resize", function () {
@@ -833,7 +762,7 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
             }
           })
           .catch((error) => {
-            console.error("❌ Error updating file info:", error);
+            console.error("Error updating file info:", error);
           });
       }
 
@@ -843,260 +772,30 @@ For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" t
 
         // Then check every 30 seconds for new files
         fileCheckInterval = setInterval(updateFileInfo, 30000);
-        console.log("🔄 File monitoring started - checking every 30 seconds");
+        console.log("File monitoring started - checking every 30 seconds");
       }
 
       function stopFileMonitoring() {
         if (fileCheckInterval) {
           clearInterval(fileCheckInterval);
-          console.log("⏹️ File monitoring stopped");
+          console.log("File monitoring stopped");
         }
-      }
-
-      // Add local file status check function with retry logic
-      function checkLocalFiles(retryCount = 0) {
-        // Function removed - no longer needed for local file operation
       }
 
       // Load stats and check files when page loads
       document.addEventListener("DOMContentLoaded", function () {
         // Load stats immediately
         setTimeout(() => {
-          console.log("🔄 Loading stats...");
+          console.log("Loading stats...");
           loadLiveStats();
         });
 
         // Start monitoring for file changes
         setTimeout(() => {
-          console.log("🔄 Starting file monitoring...");
+          console.log("tarting file monitoring...");
           startFileMonitoring();
         }, 1500);
       });
-    </script>
-    <script>
-      // Draggable + Minimize logic for stats panel
-      function initStatsPanelWidget() {
-        const panel = document.getElementById("stats-panel");
-        const restoreBtn = document.getElementById("stats-toggle-floating");
-        const minimizeBtn = document.getElementById("stats-minimize-btn");
-        const overlay = document.getElementById("drag-overlay");
-        if (!panel || !restoreBtn || !minimizeBtn) return;
-
-        const LS_POS = "statsPanelPos";
-        const LS_MIN = "statsPanelMinimized";
-
-        // Helpers
-        function applyPos(pos) {
-          if (!pos) return;
-          // Ensure visibility for accurate measurements
-          panel.classList.add("visible");
-          panel.style.right = "auto";
-          const rect = panel.getBoundingClientRect();
-          const panelH = rect.height;
-          const maxLeft = Math.max(0, window.innerWidth - rect.width);
-          let left = Math.max(0, Math.min(maxLeft, pos.left || 0));
-          // Compute top using anchor if available
-          let top;
-          if (pos.anchorY === "bottom" && typeof pos.bottomGap === "number") {
-            top = window.innerHeight - panelH - pos.bottomGap;
-          } else {
-            top = typeof pos.top === "number" ? pos.top : 0;
-          }
-          // Final clamp
-          const maxTop = Math.max(0, window.innerHeight - panelH);
-          top = Math.max(0, Math.min(maxTop, top));
-          panel.style.left = left + "px";
-          panel.style.top = top + "px";
-        }
-        function savePos() {
-          const rect = panel.getBoundingClientRect();
-          const bottomGap = Math.max(
-            0,
-            window.innerHeight - (rect.top + rect.height)
-          );
-          const anchorY = bottomGap <= 40 ? "bottom" : "top"; // treat near-bottom as bottom-anchored
-          const pos = {
-            left: Math.max(
-              0,
-              Math.min(window.innerWidth - rect.width, rect.left)
-            ),
-            top: Math.max(
-              0,
-              Math.min(window.innerHeight - rect.height, rect.top)
-            ),
-            bottomGap,
-            anchorY,
-          };
-          try {
-            localStorage.setItem(LS_POS, JSON.stringify(pos));
-          } catch {}
-        }
-        function getSavedPos() {
-          try {
-            return JSON.parse(localStorage.getItem(LS_POS) || "null");
-          } catch {
-            return null;
-          }
-        }
-        function minimize() {
-          panel.classList.add("is-hidden");
-          panel.classList.remove("visible");
-          restoreBtn.classList.remove("hidden");
-          try {
-            localStorage.setItem(LS_MIN, "1");
-          } catch {}
-        }
-        function restore() {
-          panel.classList.remove("is-hidden");
-          panel.classList.add("visible");
-          restoreBtn.classList.add("hidden");
-          try {
-            localStorage.removeItem(LS_MIN);
-          } catch {}
-          // Reapply saved position on restore
-          const saved = getSavedPos();
-          if (saved) applyPos(saved);
-        }
-
-        // Initial state
-        const minimized = localStorage.getItem(LS_MIN) === "1";
-        if (minimized) {
-          panel.classList.add("is-hidden");
-          restoreBtn.classList.remove("hidden");
-        } else {
-          // Default position if none saved
-          const saved = getSavedPos();
-          if (saved) {
-            applyPos(saved);
-          } else {
-            // Place near right side, 20% from top
-            const width = 320; // same as CSS
-            const margin = 32;
-            const left = Math.max(margin, window.innerWidth - width - margin);
-            const top = Math.round(
-              (window.innerHeight - panel.getBoundingClientRect().height) / 2
-            );
-            panel.style.left = left + "px";
-            panel.style.top = top + "px";
-            panel.style.right = "auto";
-            panel.classList.add("visible");
-          }
-        }
-
-        // Drag support
-        let dragging = false;
-        let startX = 0,
-          startY = 0,
-          origLeft = 0,
-          origTop = 0;
-        let moved = false;
-        let rafId = null;
-        let nextLeft = null;
-        let nextTop = null;
-
-        function onDown(e) {
-          // Only left mouse or touch
-          if (e.button !== undefined && e.button !== 0) return;
-          const rect = panel.getBoundingClientRect();
-          dragging = true;
-          moved = false;
-          startX = e.touches ? e.touches[0].clientX : e.clientX;
-          startY = e.touches ? e.touches[0].clientY : e.clientY;
-          origLeft = rect.left;
-          origTop = rect.top;
-          // Ensure we use left/top (not right/transform)
-          panel.style.right = "auto";
-          panel.style.transform = "none";
-          panel.classList.add("dragging");
-          if (overlay) overlay.style.display = "block";
-          // Prevent selecting other elements
-          document.body.style.userSelect = "none";
-          document.addEventListener("mousemove", onMove);
-          document.addEventListener("mouseup", onUp);
-          document.addEventListener("touchmove", onMove, { passive: false });
-          document.addEventListener("touchend", onUp);
-        }
-        function onMove(e) {
-          if (!dragging) return;
-          const x = e.touches ? e.touches[0].clientX : e.clientX;
-          const y = e.touches ? e.touches[0].clientY : e.clientY;
-          const dx = x - startX;
-          const dy = y - startY;
-          if (!moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) moved = true;
-          e.preventDefault();
-          let left = origLeft + dx;
-          let top = origTop + dy;
-          // Defer DOM writes to next animation frame for smoothness
-          nextLeft = left;
-          nextTop = top;
-          if (!rafId) {
-            rafId = requestAnimationFrame(() => {
-              rafId = null;
-              // Clamp within viewport using current size
-              const rect = panel.getBoundingClientRect();
-              const maxLeft = window.innerWidth - rect.width;
-              const maxTop = window.innerHeight - rect.height;
-              let cl = Math.max(0, Math.min(maxLeft, nextLeft));
-              let ct = Math.max(0, Math.min(maxTop, nextTop));
-              panel.style.left = cl + "px";
-              panel.style.top = ct + "px";
-            });
-          }
-        }
-        function onUp() {
-          if (!dragging) return;
-          dragging = false;
-          document.removeEventListener("mousemove", onMove);
-          document.removeEventListener("mouseup", onUp);
-          document.removeEventListener("touchmove", onMove);
-          document.removeEventListener("touchend", onUp);
-          panel.classList.remove("dragging");
-          if (overlay) overlay.style.display = "none";
-          document.body.style.userSelect = "";
-          savePos();
-        }
-
-        // Start drag from anywhere inside panel
-        //panel.addEventListener("mousedown", onDown);
-        //panel.addEventListener("touchstart", onDown, { passive: true });
-
-        // Prevent click-through if it was a drag
-        panel.addEventListener(
-          "click",
-          function (ev) {
-            if (moved) {
-              ev.preventDefault();
-              ev.stopPropagation();
-            }
-            moved = false;
-          },
-          true
-        );
-
-        // Minimize/restore
-        minimizeBtn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          minimize();
-        });
-        restoreBtn.addEventListener("click", function (e) {
-          e.preventDefault();
-          restore();
-        });
-
-        // Re-clamp on resize
-        window.addEventListener("resize", function () {
-          // Reapply from saved anchor so height/viewport changes don't drift position
-          const saved = getSavedPos();
-          if (saved) applyPos(saved);
-          savePos();
-        });
-
-        // Expose a one-shot reapply to be called after content height changes
-        window.__reapplyStatsPanelPosition = function () {
-          const saved = getSavedPos();
-          if (saved) applyPos(saved);
-        };
-      }
     </script>
   </body>
 </html>
