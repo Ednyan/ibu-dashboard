@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.3] - 2026-01-18
+
+### Changed
+
+- Switched the docker image to Debian
+- Removed some dead code
+
+---
+
 ## [1.1.2] - 2026-01-15
 
 ### Added
