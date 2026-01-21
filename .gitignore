@@ -1,5 +1,5 @@
 # Python
-**__pycache__
+**/__pycache__/
 .venv/
 
 # Misc
@@ -8,12 +8,20 @@ Scraped_Teams_Points/
 config/
 discord_bot/
 .env
+notification_history/
+cache/
+static/tailwind.css
+
+# IDEs
+.idea/
 .vscode/
-*.json
-notification_history
+
+# Node
+node_modules/
+
 # Rust
 /target
 
 # Docker 
 docker-compose.yml
-docker
+docker/
