@@ -1,6 +1,6 @@
 FROM debian:trixie-slim
 
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl libssl3 curl cron rustup build-essential python3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates openssl libssl3 curl cron rustup build-essential python3 npm && rm -rf /var/lib/apt/lists/*
 RUN rustup default stable
 RUN curl -Ls https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
