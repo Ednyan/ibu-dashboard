@@ -15,11 +15,14 @@ This is a project made by members of the [I.B.U. Sheepit team](https://sheepit-r
 
 - Rust
 - Python 3
+- Nodejs
+- Tmux
 
 ### Instructions
 
 - Clone this repo.
-- Run `./scripts/setup.sh` To make a virtual python environment, build rust libraries, and install python dependencies.
-- Run `./scripts/run-dev.sh` to run. You can also run manually with `./.venv/bin/python main.py`
+- Run `./scripts/setup.sh` To make a virtual python environment, build rust libraries, and install dependencies.
+- Run `./scripts/dev.sh`
+- Go to http://localhost:5000/ to view.
 
 If you want to run a production version refer to the [Production Setup Guide](docs/prod-setup.md)
