@@ -19,4 +19,7 @@ fi
 # Rust setup
 ./scripts/build.sh
 
-echo "To run, run ./scripts/run.sh"
+# Node setup
+npm install 
+npx @tailwindcss/cli -i ./static/input.css -o ./static/tailwind.css --minify
+
