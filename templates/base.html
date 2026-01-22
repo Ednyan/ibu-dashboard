@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}I.B.U. Dashboard{% endblock %}</title>
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='ibu-icon.svg') }}"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link
+      rel="preload"
+      as="image"
+      href="{{ url_for('static', filename='ibu-icon.svg') }}"
+    />
+    <link
+      rel="preload"
+      as="image"
+      href="{{ url_for('static', filename='ibu-text.svg') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='tailwind.css') }}"
+    />
+
+    <style>
+      /* Typed custom properties for smooth animation */
+      @property --rot {
+        syntax: "<angle>";
+        initial-value: 0deg;
+        inherits: false;
+      }
+      @property --pulse {
+        syntax: "<number>";
+        initial-value: 0;
+        inherits: false;
+      }
+
+      /* Ambient background glow animation (replaces body::before) */
+      @keyframes ambientShift {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+      .ambient-bg {
+        animation: ambientShift 10s ease-in-out infinite;
+      }
+
+      /* Particles */
+      @keyframes particleFloat {
+        0%,
+        100% {
+          transform: translateY(0px) rotate(0deg);
+          opacity: 0.6;
+        }
+        50% {
+          transform: translateY(-20px) rotate(180deg);
+          opacity: 1;
+        }
+      }
+      .particle {
+        position: absolute;
+        background: rgba(224, 97, 80, 0.6);
+        border-radius: 9999px;
+        animation: particleFloat 6s infinite ease-in-out;
+      }
+
+      /* Sidebar open/close driven by existing JS toggling .open */
+      .update-history-sidebar {
+        left: -320px;
+      }
+      .update-history-sidebar.open {
+        left: 0;
+      }
+
+      /* Scrollbar styling (no Tailwind default for this) */
+      .update-history-sidebar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(224, 97, 80, 0.5) transparent;
+      }
+      .update-history-sidebar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .update-history-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .update-history-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(224, 97, 80, 0.5);
+        border-radius: 9999px;
+      }
+
+      /* Logo entrance + rotation/glow pulse */
+      @keyframes rotIntro {
+        0% {
+          opacity: 0;
+          --rot: -180deg;
+        }
+        55% {
+          opacity: 1;
+          --rot: 8deg;
+        }
+        100% {
+          opacity: 1;
+          --rot: 0deg;
+        }
+      }
+      @keyframes glowPulse {
+        0%,
+        100% {
+          --pulse: 0;
+          filter: drop-shadow(0 0 30px rgba(224, 97, 80, 0.3));
+        }
+        50% {
+          --pulse: var(--pulse-amp);
+          filter: drop-shadow(0 0 50px rgba(224, 97, 80, 0.6));
+        }
+      }
+
+      #logo_IBU {
+        --scale: 1;
+        --pulse-amp: 0.02;
+        transform: translate3d(0, 0, 0) rotate(var(--rot))
+          scale(calc(var(--scale) + var(--pulse)));
+        filter: drop-shadow(0 0 30px rgba(224, 97, 80, 0.3));
+        animation:
+          rotIntro 2.4s ease-out 0.6s both,
+          glowPulse 4s ease-in-out 3s infinite both;
+        animation-play-state: running, running;
+        will-change: transform, filter;
+        transition:
+          transform 0.25s ease,
+          filter 0.25s ease;
+        cursor: pointer;
+      }
+      #logo_IBU:hover,
+      #logo_IBU.logo-hover {
+        transform: rotate(5deg) scale(0.9);
+        filter: drop-shadow(0 0 60px rgba(224, 97, 80, 0.8));
+        animation-play-state: running, paused;
+      }
+
+      /* Content reveal */
+      @keyframes contentReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .content-area {
+        animation: contentReveal 1s ease-out 1.8s both;
+      }
+
+      /* Fade-in helper used by your JS */
+      .fade-in {
+        opacity: 1 !important;
+        transform: translateY(0) !important;
+      }
+
+      /* Text panel defaults (JS drives transform/opacity inline) */
+      .text-panel {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      @media (max-width: 768px) {
+        .text-panel {
+          width: 100%;
+        }
+        .text-panel.active {
+          transform: translateX(0) !important;
+          opacity: 1 !important;
+        }
+      }
+    </style>
+
+    {% block head %}{% endblock %}
+  </head>
+
+  <body
+    class="relative m-0 min-h-screen overflow-x-hidden flex flex-col bg-linear-to-br from-[#1a1a1a] to-[#2d2d2d] font-sans text-white"
+  >
+    <!-- Background layers -->
+    <div
+      id="particles"
+      class="pointer-events-none fixed inset-0 z-0"
+      aria-hidden="true"
+    ></div>
+
+    <div
+      aria-hidden="true"
+      class="ambient-bg pointer-events-none fixed inset-0 z-0 opacity-30"
+      style="
+        background:
+          radial-gradient(
+            circle at 20% 80%,
+            rgba(224, 97, 80, 0.1) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 20%,
+            rgba(224, 97, 80, 0.05) 0%,
+            transparent 50%
+          );
+      "
+    ></div>
+
+    <!-- App content above backgrounds -->
+    <div class="relative z-10 flex min-h-screen flex-col">
+      {% include "header.html" %}
+
+      <main class="flex-1 flex items-center justify-center">
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer>{% include "footer.html" %}</footer>
+    </div>
+
+    <script>
+      (function () {
+        function createParticles(container) {
+          const particleCount = 50;
+
+          for (let i = 0; i < particleCount; i++) {
+            const particle = document.createElement("div");
+            particle.className = "particle";
+
+            const size = Math.random() * 4 + 2;
+            particle.style.width = size + "px";
+            particle.style.height = size + "px";
+
+            particle.style.left = Math.random() * 100 + "%";
+            particle.style.top = Math.random() * 100 + "%";
+
+            particle.style.animationDelay = Math.random() * 6 + "s";
+            particle.style.animationDuration = Math.random() * 3 + 4 + "s";
+
+            container.appendChild(particle);
+          }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+          if (
+            window.matchMedia &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ) {
+            return;
+          }
+
+          const container = document.getElementById("particles");
+          if (!container) return;
+
+          if (container.dataset.particlesInit === "1") return;
+          container.dataset.particlesInit = "1";
+
+          createParticles(container);
+        });
+      })();
+    </script>
+  </body>
+</html>

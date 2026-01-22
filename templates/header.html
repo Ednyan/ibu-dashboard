@@ -1,0 +1,121 @@
+<header class="sticky top-0 z-40 border-b border-white/10 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+    <a href="/" class="flex items-center gap-3">
+      <img
+        src="{{ url_for('static', filename='ibu-icon.svg') }}"
+        alt="IBU"
+        class="h-8 w-8"
+        width="32"
+        height="32"
+        decoding="async"
+      />
+      <span class="text-sm font-semibold tracking-wide text-white/90">
+        I.B.U. Dashboard
+      </span>
+    </a>
+
+    <nav class="hidden gap-2 sm:flex">
+      <a
+        href="{{ url_for('visualization') }}"
+        class="rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+      >
+        Team Data
+      </a>
+      <a
+        href="{{ url_for('trends') }}"
+        class="rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+      >
+        Trends
+      </a>
+      <a
+        href="{{ url_for('member_info') }}"
+        class="rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white"
+      >
+        Members
+      </a>
+      <a
+        href="https://discord.com/invite/2S2WZMznVJ"
+        class="rounded-lg p-2 hover:bg-white/10"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          src="{{ url_for('static', filename='discord-icon.svg') }}"
+          alt="Git"
+          class="h-6 w-6"
+        />
+      </a>
+    </nav>
+
+    <button
+      id="menu-toggle"
+      class="sm:hidden inline-flex items-center justify-center rounded-lg p-2 text-white/80 hover:bg-white/10 focus:outline-none"
+      aria-label="Open menu"
+    >
+      <!-- Hamburger icon -->
+      <svg
+        class="h-6 w-6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
+    </button>
+  </div>
+  <nav
+    id="mobile-menu"
+    class="sm:hidden fixed left-0 right-0 top-[64px] z-500 max-h-0 overflow-hidden border-t border-white/10 bg-black/80 backdrop-blur transition-[max-height,opacity] duration-300 ease-out opacity-0"
+  >
+    <div class="flex flex-col gap-1 px-4 py-3">
+      <a
+        href="{{ url_for('visualization') }}"
+        class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+        >Team Data</a
+      >
+      <a
+        href="{{ url_for('trends') }}"
+        class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+        >Trends</a
+      >
+      <a
+        href="{{ url_for('member_info') }}"
+        class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+        >Members</a
+      >
+      <a
+        href="https://discord.com/invite/2S2WZMznVJ"
+        target="_blank"
+        class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+      >
+        <img
+          src="{{ url_for('static', filename='discord-icon.svg') }}"
+          alt="Git"
+          class="h-6 w-6"
+      /></a>
+    </div>
+  </nav>
+</header>
+<script>
+  const toggle = document.getElementById("menu-toggle");
+  const menu = document.getElementById("mobile-menu");
+
+  let open = false;
+
+  toggle.addEventListener("click", () => {
+    open = !open;
+
+    if (open) {
+      menu.classList.remove("max-h-0", "opacity-0");
+      menu.classList.add("max-h-96", "opacity-100");
+    } else {
+      menu.classList.add("max-h-0", "opacity-0");
+      menu.classList.remove("max-h-96", "opacity-100");
+    }
+  });
+</script>

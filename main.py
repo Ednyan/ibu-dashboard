@@ -202,6 +202,35 @@ def _sanitize_team_name(name: str) -> str:
         return str(name).strip().lower()
 
 
+def get_csv_file_by_index(index: int = 0):
+    # index=0 -> latest
+    # index=1 -> previous
+
+    try:
+        csv_files = get_csv_files_from_folder()
+
+        if not csv_files or index < 0 or index >= len(csv_files):
+            return None, None, None
+
+        file_path = csv_files[index]
+
+        filename = os.path.basename(file_path)
+        date_match = re.search(r"(\d{4}-\d{2}-\d{2})", filename)
+
+        file_timestamp = datetime.fromtimestamp(os.path.getmtime(file_path))
+
+        if date_match:
+            date_str = date_match.group(1)
+        else:
+            date_str = "unknown"
+
+        return file_path, date_str, file_timestamp
+
+    except Exception as e:
+        print(f"Error getting CSV file by index: {str(e)}")
+        return None, None, None
+
+
 def get_latest_csv_file():
     """
     Get the latest CSV file from the local folder
@@ -719,6 +748,35 @@ _email_discord_stop = threading.Event()
 _email_discord_thread = None
 
 
+def compact_num(n):
+    try:
+        n = float(n)
+    except (TypeError, ValueError):
+        return n
+
+    sign = "-" if n < 0 else ""
+    n = abs(n)
+
+    # Use 1 decimal for compactness when needed
+    if n >= 1_000_000_000_000:
+        v, s = n / 1_000_000_000_000, "T"
+    elif n >= 1_000_000_000:
+        v, s = n / 1_000_000_000, "B"
+    elif n >= 1_000_000:
+        v, s = n / 1_000_000, "M"
+    elif n >= 1_000:
+        v, s = n / 1_000, "K"
+    else:
+        return f"{sign}{int(n)}"
+
+    # drop trailing .0
+    out = f"{v:.1f}".rstrip("0").rstrip(".")
+    return f"{sign}{out}{s}"
+
+
+app.jinja_env.filters["compact"] = compact_num
+
+
 def _email_to_discord_worker(interval_sec: int):
     logging.getLogger().setLevel(logging.INFO)
     while not _email_discord_stop.is_set():
@@ -801,15 +859,91 @@ if EMAIL_TO_DISCORD_START_EAGER:
         print(f"[Email→Discord] Failed to start scheduler on boot: {_e}")
 
 
+def compute_simple_stats_from_latest_csv(previous_file_path=None):
+    file_path, date_str, file_timestamp = get_latest_csv_file()
+
+    if not file_path or not os.path.exists(file_path):
+        return {
+            "total_points": 0,
+            "active_members": 0,
+            "top_performers": [],
+            "total_points_gain": 0,
+            "active_members_gain": 0,
+        }
+
+    df = pd.read_csv(file_path)
+    df.columns = df.columns.str.strip()
+    df = df.rename(columns={"name": "Member", "points": "Points"})
+
+    if "Points" not in df.columns or "Member" not in df.columns:
+        return {
+            "total_points": 0,
+            "active_members": 0,
+            "top_performers": [],
+            "total_points_gain": 0,
+            "active_members_gain": 0,
+        }
+
+    df["Points"] = pd.to_numeric(df["Points"], errors="coerce").fillna(0)
+
+    total_points = int(df["Points"].sum())
+    active_members = int((df["Points"] > 0).sum())
+
+    top_df = df[df["Points"] > 0].nlargest(10, "Points")
+    prev_points_map = {}
+    if previous_file_path and os.path.exists(previous_file_path):
+        prev = pd.read_csv(previous_file_path)
+        prev.columns = prev.columns.str.strip()
+        prev = prev.rename(columns={"name": "Member", "points": "Points"})
+        prev["Points"] = pd.to_numeric(prev["Points"], errors="coerce").fillna(0)
+        prev_points_map = dict(
+            zip(prev["Member"].astype(str).str.strip(), prev["Points"])
+        )
+
+    top_performers = [
+        {
+            "name": row["Member"],
+            "points": int(row["Points"]),
+            "gain": int(
+                row["Points"] - prev_points_map.get(str(row["Member"]).strip(), 0)
+            ),
+        }
+        for _, row in top_df.iterrows()
+    ]
+
+    total_points_gain = 0
+    active_members_gain = 0
+
+    if previous_file_path and os.path.exists(previous_file_path):
+        prev = pd.read_csv(previous_file_path)
+        prev.columns = prev.columns.str.strip()
+        prev = prev.rename(columns={"name": "Member", "points": "Points"})
+        prev["Points"] = pd.to_numeric(prev["Points"], errors="coerce").fillna(0)
+
+        total_points_gain = total_points - int(prev["Points"].sum())
+        active_members_gain = int((df["Points"] > 0).sum()) - int(
+            (prev["Points"] > 0).sum()
+        )
+
+    return {
+        "total_points": total_points,
+        "active_members": active_members,
+        "top_performers": top_performers,
+        "total_points_gain": total_points_gain,
+        "active_members_gain": active_members_gain,
+    }
+
+
 @app.route("/")
 def index():
-    file_path, date_str, file_timestamp = get_latest_csv_file()
+    file_path, date_str, file_timestamp = get_csv_file_by_index(0)
+    prev_file_path, _, _ = get_csv_file_by_index(1)
+
     if not file_path or not date_str:
         latest_file = "No data"
         latest_date = "No data"
         time_ago = "No recent data"
     else:
-        # Format the file string if possible
         try:
             latest_file = os.path.abspath(file_path)
             latest_date = datetime.strptime(date_str, "%Y-%m-%d").strftime("%B %d, %Y")
@@ -819,9 +953,14 @@ def index():
             latest_date = date_str
             time_ago = "Recently"
 
-    print(f"Latest file: {latest_file}, Date: {latest_date}, Time ago: {time_ago}")
+    stats = compute_simple_stats_from_latest_csv(previous_file_path=prev_file_path)
+
     return render_template(
-        "index.html", saved_file=latest_file, latest_date=latest_date, time_ago=time_ago
+        "index.html",
+        saved_file=latest_file,
+        latest_date=latest_date,
+        time_ago=time_ago,
+        stats=stats,
     )
 
 
@@ -3752,6 +3891,42 @@ def fill_missing_daily_dates(trends_data):
     except Exception as e:
         print(f"fill_missing_daily_dates error: {e}")
         return trends_data
+
+
+def get_version() -> str:
+    try:
+        changelog_file = "CHANGELOG.md"
+
+        if not os.path.exists(changelog_file):
+            return "unknown"
+
+        header_re = re.compile(
+            r"^\s*##\s*\[(?P<version>[^\]]+)\]\s*(?:-\s*(?P<date>\d{4}-\d{2}-\d{2}))?\s*$"
+        )
+
+        with open(changelog_file, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.rstrip("\n")
+                m = header_re.match(line)
+                if not m:
+                    continue
+
+                v = (m.group("version") or "").strip()
+                if not v or v.lower() == "unreleased":
+                    continue
+
+                return v[1:] if v.lower().startswith("v") else v
+
+        return "unknown"
+
+    except Exception as e:
+        print(f"Error reading changelog version: {e}")
+        return "unknown"
+
+
+@app.context_processor
+def version():
+    return {"app_version": get_version()}
 
 
 # Flask startup

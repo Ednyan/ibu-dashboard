@@ -1,801 +1,152 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>I.B.U. Dashboard</title>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="{{ url_for('static', filename='ibu-icon.svg') }}"
-    />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Preload critical images to avoid late layout shifts -->
-    <link
-      rel="preload"
-      as="image"
-      href="{{ url_for('static', filename='ibu-icon.svg') }}"
-    />
-    <link
-      rel="preload"
-      as="image"
-      href="{{ url_for('static', filename='ibu-text.svg') }}"
-    />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="{{ url_for('static', filename='index.css') }}?v=1.0"
-    />
-    <style>
-      /* Ensure hidden state beats global !important display */
-      .stats-panel.is-hidden {
-        display: none !important;
-      }
-      /* Draggable stats panel affordances */
-      #stats-panel {
-        position: fixed;
-        z-index: 999;
-        width: 320px;
-        display: none; /* default hidden until JS decides */
-        cursor: grab; /* hand-like cursor */
-      }
-      #stats-panel.visible {
-        display: block;
-      }
-      #stats-panel.dragging {
-        cursor: grabbing;
-      }
-      #stats-panel .drag-hint {
-        position: absolute;
-        top: 6px;
-        right: 36px;
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.6);
-        user-select: none;
-        pointer-events: none;
-      }
-      #stats-minimize-btn {
-        position: absolute;
-        top: 6px;
-        right: 6px;
-        background: rgba(0, 0, 0, 0.55);
-        border: 1px solid rgba(255, 255, 255, 0.35);
-        color: #fff;
-        border-radius: 8px;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        font-size: 1rem;
-        font-weight: 700;
-        line-height: 1;
-        z-index: 2; /* ensure above panel content */
-      }
-      #stats-minimize-btn:hover {
-        background: rgba(0, 0, 0, 0.5);
-      }
-      /* Floating restore button shown only when minimized */
-      .stats-toggle-floating.hidden {
-        display: none !important;
-      }
-      /* Overlay used during dragging to prevent selecting/clicking other content */
-      #drag-overlay {
-        position: fixed;
-        inset: 0;
-        background: transparent;
-        z-index: 998;
-        display: none;
-        cursor: grabbing;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Particles container -->
-    <div class="particles-container" id="particles"></div>
+{% extends "base.html" %} {% block title %}I.B.U. Dashboard{% endblock %} {%
+block content %}
 
-    <div class="update-history-sidebar" id="update-sidebar">
-      <div class="sidebar-header">
-        <h3>Updates</h3>
-        <button class="sidebar-toggle" id="sidebar-toggle">←</button>
+<div
+  class="fixed left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-10 pointer-events-none"
+>
+  <!-- Images -->
+  <div class="flex flex-col items-center gap-6 m">
+    <img
+      src="{{ url_for('static', filename='ibu-icon.svg') }}"
+      class="w-[340px] max-w-[80vw]"
+      alt="I.B.U. Icon"
+    />
+    <img
+      src="{{ url_for('static', filename='ibu-text.svg') }}"
+      class="w-[800px] max-w-[80vw]"
+      alt="I.B.U. Text"
+    />
+  </div>
+
+  <!-- Buttons -->
+  <div class="hidden md:flex gap-6 pointer-events-auto mb-15">
+    <a
+      href="{{ url_for('visualization') }}"
+      class="px-10 py-4 rounded-4xl text-3xl text-white whitespace-nowrap font-semibold bg-linear-to-br from-[#e06150] to-[#ff7a6b] shadow-lg shadow-orange-500/20 transition hover:scale-[1.03] active:scale-[0.97] inline-block"
+    >
+      Team Overview
+    </a>
+
+    <a
+      href="{{ url_for('trends') }}"
+      class="px-10 py-4 rounded-4xl text-3xl text-white whitespace-nowrap font-semibold bg-linear-to-br from-[#66afea] to-[#4b5ba2] shadow-lg shadow-orange-500/20 transition hover:scale-[1.03] active:scale-[0.97] inline-block"
+    >
+      Trends
+    </a>
+
+    <a
+      href="{{ url_for('member_info') }}"
+      class="px-10 py-4 rounded-4xl text-3xl text-white whitespace-nowrap font-semibold bg-linear-to-br from-[#667eea] to-[#764ba2] shadow-lg shadow-orange-500/20 transition hover:scale-[1.03] active:scale-[0.97] inline-block"
+    >
+      Member Tracking
+    </a>
+  </div>
+</div>
+
+<div
+  id="stats-panel"
+  class="fixed right-6 top-1/2 z-40 -translate-y-1/2 select-none hidden md:block"
+>
+  <div
+    class="w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-orange-700/40 bg-black/5 backdrop-brightness-75 backdrop-blur p-4 text-sm text-white shadow-xl shadow-black/50"
+  >
+    <div class="mb-4 border-b border-white/10 pb-2">
+      <h3 class="text-sm font-semibold tracking-wide text-white/90">
+        Team Overview
+      </h3>
+      <div class="mt-1 mb-1 text-xs text-white/45">
+        Data from {{ latest_date }}
       </div>
-      <div class="sidebar-content">
-        <!-- Updates will be loaded dynamically -->
-        <div id="updates-container"></div>
+      <div class="text-[0.7rem] text-white/40">Updated {{ time_ago }}</div>
+    </div>
+
+    <!-- Key stats -->
+    <div class="space-y-3">
+      <!-- Total Points -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-white/70">
+          <span>Total Points</span>
+        </div>
+
+        <div class="flex items-baseline gap-2 font-semibold tabular-nums">
+          <span>{{ stats.total_points|compact }}</span>
+          {% if stats.total_points_gain is defined %} {% set g =
+          stats.total_points_gain %}
+          <span
+            class="px-2 py-0.5 rounded-full text-[0.7rem] font-semibold {% if g > 0 %} bg-green-500/15 text-green-300 {% elif g < 0 %} bg-red-500/15 text-red-300 {% else %} bg-white/5 text-white/40 {% endif %}"
+          >
+            {% if g > 0 %}+{% endif %}{{ g|compact }}</span
+          >
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Active Members -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 text-white/70">
+          <span>Active Members</span>
+        </div>
+
+        <div class="flex items-baseline gap-2 font-semibold tabular-nums">
+          <span>{{ stats.active_members }}</span>
+
+          {% if stats.active_members_gain is defined %} {% set g =
+          stats.active_members_gain %}
+          <span
+            class="text-xs font-semibold {% if g > 0 %}text-green-400 {% elif g < 0 %}text-red-400 {% else %}text-white/40 {% endif %}"
+          >
+            {% if g > 0 %}+{% endif %}{{ g }}
+          </span>
+          {% endif %}
+        </div>
       </div>
     </div>
 
-    <!-- Floating Controls Container -->
-    <div class="floating-controls">
-      <!-- Updates -->
-      <button
-        class="sidebar-toggle-floating"
-        id="floating-toggle"
-        aria-label="Updates"
-      >
-        <span class="fa-icon" aria-hidden="true">📋</span>
-        <span class="fa-label">Updates</span>
-      </button>
-      <!-- Admin Manager -->
-      <a
-        class="sidebar-toggle-floating admin-toggle-floating"
-        href="{{ url_for('notification_admin') }}"
-        aria-label="Enter Admin Manager"
-      >
-        <span class="fa-icon" aria-hidden="true">🛡️</span>
-        <span class="fa-label">Admin Panel</span>
-      </a>
-      <!-- Discord -->
-      <a
-        class="sidebar-toggle-floating discord-toggle-floating"
-        href="https://discord.com/invite/2S2WZMznVJ"
-        target="_blank"
-        rel="noopener"
-        aria-label="Join I.B.U. Discord"
-      >
-        <span class="fa-icon" aria-hidden="true"
-          ><img
-            src="{{ url_for('static', filename='discord-icon.svg') }}"
-            alt=""
-        /></span>
-        <span class="fa-label">Join us on Discord!</span>
-      </a>
-      <!-- Git -->
-      <a
-        class="sidebar-toggle-floating discord-toggle-floating"
-        href="https://github.com/Ednyan/ibu-dashboard"
-        target="_blank"
-        rel="noopener"
-        aria-label="git"
-      >
-        <span class="fa-icon"
-          ><img src="{{ url_for('static', filename='git-icon.svg') }}" alt=""
-        /></span>
-        <span class="fa-label">View the source code!</span>
-      </a>
-      <!-- Stats restore (visible when minimized) -->
-      <button
-        class="sidebar-toggle-floating stats-toggle-floating hidden"
-        id="stats-toggle-floating"
-        aria-label="Show Daily Statistics"
-      >
-        <span class="fa-icon" aria-hidden="true">📊</span>
-        <span class="fa-label">Stats overview</span>
-      </button>
-    </div>
+    <!-- Divider -->
+    <div class="my-4 border-t border-white/10"></div>
 
-    <!-- Main landing container -->
-    <div class="landing-container" id="main-container">
-      <!-- Logo section -->
-      <div class="logo-container">
-        <img
-          id="logo_IBU"
-          src="{{ url_for('static', filename='ibu-icon.svg') }}"
-          alt="IBU Logo"
-          width="400"
-          height="400"
-          decoding="async"
-          loading="eager"
-        />
+    <!-- Top performers -->
+    <div>
+      <div class="mb-2 flex items-center justify-between text-white/80">
+        <span class="text-xs font-semibold tracking-wide uppercase">
+          Top Performers
+        </span>
       </div>
 
-      <!-- Content area -->
-      <div class="content-area">
-        <img
-          id="IBU_text"
-          src="{{ url_for('static', filename='ibu-text.svg') }}"
-          alt="IBU Text"
-          width="600"
-          height="150"
-          decoding="async"
-          loading="eager"
-        />
-        <!-- Main action button -->
+      {% if stats.top_performers %}
+      <div class="space-y-1">
+        {% for p in stats.top_performers %} {% set dg = p.gain if p.gain is
+        defined else 0 %}
         <div
-          style="display: inline-flex; flex-wrap: wrap; justify-content: center"
+          class="flex items-center justify-between rounded-lg px-2 py-1 hover:bg-white/5"
         >
-          <a
-            href="{{ url_for('visualization') }}"
-            class="hero-button"
-            style="margin-left: 1rem; margin-right: 1rem; margin-bottom: 1rem"
-          >
-            Team Data Analysis
-          </a>
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="w-3 shrink-0 text-right text-xs text-white/40">
+              {{ loop.index }}.
+            </span>
+            <span class="truncate">{{ p.name }}</span>
+          </div>
 
-          <!-- Trends Analysis button -->
-          <a
-            href="{{ url_for('trends') }}"
-            class="hero-button"
-            style="
-              background: linear-gradient(135deg, #66afea 0%, #4b5ba2 100%);
-              margin-left: 1rem;
-              margin-right: 1rem;
-              margin-bottom: 1rem;
-            "
-          >
-            Trends Analysis
-          </a>
+          <div class="flex items-center gap-2 shrink-0 tabular-nums">
+            <!-- Points -->
+            <span class="text-sm font-medium text-orange-500">
+              {{ p.points|compact }}
+            </span>
 
-          <!-- Member Info button -->
-          <a
-            href="{{ url_for('member_info') }}"
-            class="hero-button"
-            style="
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              margin-left: 1rem;
-              margin-right: 1rem;
-              margin-bottom: 1rem;
-            "
-          >
-            Member Tracking
-          </a>
+            <!-- Gain pill -->
+            <span
+              class="px-2 py-0.5 rounded-full text-[0.7rem] font-semibold {% if dg > 0 %} bg-green-500/15 text-green-300 {% elif dg < 0 %} bg-red-500/15 text-red-300 {% else %} bg-white/5 text-white/40 {% endif %}"
+            >
+              {% if dg > 0 %}+{% endif %}{{ dg|compact }}
+            </span>
+          </div>
         </div>
-        <!-- Information section -->
-        <div class="info-container">
-          <p class="update-info" id="latest_date">
-            New data received {{ time_ago }}
-          </p>
-          <p class="app-info">Data from {{ latest_date }}</p>
-
-          <p class="creator-credit">
-            by Mindeformer with the assistance of Kool Kid6958, Copilot and the
-            support of our kind I.B.U. members
-          </p>
-        </div>
+        {% endfor %}
       </div>
+      {% else %}
+      <div class="text-xs text-white/50">No performers yet.</div>
+      {% endif %}
     </div>
-
-    <!-- Typewriter text panel (hidden initially) -->
-    <div class="text-panel" id="text-panel">
-      <div class="text-content">
-        <h2>Welcome to I.B.U. Dashboard</h2>
-        <div class="typewriter-text" id="typewriter-text"></div>
-        <button class="back-button" id="back-button">← Back</button>
-      </div>
-    </div>
-
-    <!-- Move stats panel OUTSIDE the landing-container for proper positioning -->
-    <div class="stats-panel loaded" id="stats-panel">
-      <div class="live-stats" id="live-stats">
-        <h3>Statistics Overview</h3>
-        <div class="stat-item">
-          <span class="stat-icon">�</span>
-          <span class="stat-label">Loading stats...</span>
-        </div>
-      </div>
-    </div>
-    <div id="drag-overlay"></div>
-
-    <script>
-      // Sidebar functionality
-      function initSidebar() {
-        const sidebar = document.getElementById("update-sidebar");
-        const sidebarToggle = document.getElementById("sidebar-toggle");
-        const floatingToggle = document.getElementById("floating-toggle");
-
-        let isOpen = false;
-
-        function openSidebar() {
-          if (isOpen) return;
-          isOpen = true;
-          sidebar.classList.add("open");
-          floatingToggle.classList.add("hidden");
-          sidebarToggle.textContent = "←";
-        }
-
-        function closeSidebar() {
-          if (!isOpen) return;
-          isOpen = false;
-          sidebar.classList.remove("open");
-          floatingToggle.classList.remove("hidden");
-          sidebarToggle.textContent = "→";
-        }
-
-        function toggleSidebar() {
-          isOpen ? closeSidebar() : openSidebar();
-        }
-
-        sidebarToggle.addEventListener("click", toggleSidebar);
-        floatingToggle.addEventListener("click", function (e) {
-          e.preventDefault();
-          e.stopPropagation();
-          openSidebar();
-        });
-        // Also open when clicking anywhere inside the expanded Updates button
-        const floatingControls = document.querySelector(".floating-controls");
-        if (floatingControls) {
-          floatingControls.addEventListener("click", (ev) => {
-            const target = ev.target;
-            if (
-              target &&
-              (target.id === "floating-toggle" ||
-                (target.closest && target.closest("#floating-toggle")))
-            ) {
-              ev.preventDefault();
-              ev.stopPropagation();
-              openSidebar();
-            }
-          });
-        }
-
-        // Close sidebar when clicking outside (optional)
-        document.addEventListener("click", function (e) {
-          if (
-            isOpen &&
-            !sidebar.contains(e.target) &&
-            !(floatingToggle && floatingToggle.contains(e.target))
-          ) {
-            closeSidebar();
-          }
-        });
-      }
-
-      // Load updates from server
-      async function loadUpdates() {
-        console.log("🔄 Loading updates...");
-        const updatesContainer = document.getElementById("updates-container");
-
-        try {
-          const response = await fetch("/get_updates");
-          const data = await response.json();
-
-          if (data.success && data.updates && data.updates.length > 0) {
-            console.log("✅ Updates loaded:", data.updates);
-
-            let updatesHTML = "";
-
-            data.updates.forEach((update) => {
-              const currentClass = update.is_current ? " current" : "";
-
-              updatesHTML += `
-              <div class="update-item${currentClass}">
-                <div class="update-header">
-                  <span class="version">${update.version}</span>
-                  <span class="date">${update.date}</span>
-                </div>
-                <div class="update-title">${update.title}</div>
-                <div class="update-changes">
-                  ${update.features
-                    .map(
-                      (feature) => `<div class="change-item">${feature}</div>`
-                    )
-                    .join("")}
-                </div>
-              </div>
-            `;
-            });
-
-            updatesContainer.innerHTML = updatesHTML;
-          } else {
-            console.log("⚠️ No updates found or error:", data.error);
-            updatesContainer.innerHTML = `
-            <div class="update-item">
-              <div class="update-header">
-                <span class="version">No Updates</span>
-                <span class="date">-</span>
-              </div>
-              <div class="update-title">No update history found</div>
-              <div class="update-changes">
-                <div class="change-item">📝 Edit static/updates.txt to add your first update</div>
-              </div>
-            </div>
-          `;
-          }
-        } catch (error) {
-          console.error("❌ Error loading updates:", error);
-          updatesContainer.innerHTML = `
-          <div class="update-item">
-            <div class="update-header">
-              <span class="version">Error</span>
-              <span class="date">-</span>
-            </div>
-            <div class="update-title">Failed to load updates</div>
-            <div class="update-changes">
-              <div class="change-item">❌ ${error.message}</div>
-              <div class="change-item">
-                <button onclick="loadUpdates()" style="background: rgba(224, 97, 80, 0.8); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-top: 8px;">
-                  🔄 Retry Loading
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-        }
-      }
-
-      // Particle system
-      function createParticles() {
-        const container = document.getElementById("particles");
-        const particleCount = 50;
-
-        for (let i = 0; i < particleCount; i++) {
-          const particle = document.createElement("div");
-          particle.className = "particle";
-
-          // Random size between 2-6px
-          const size = Math.random() * 4 + 2;
-          particle.style.width = size + "px";
-          particle.style.height = size + "px";
-
-          // Random position
-          particle.style.left = Math.random() * 100 + "%";
-          particle.style.top = Math.random() * 100 + "%";
-
-          // Random animation delay
-          particle.style.animationDelay = Math.random() * 6 + "s";
-          particle.style.animationDuration = Math.random() * 3 + 4 + "s";
-
-          container.appendChild(particle);
-        }
-      }
-
-      // Initialize particles when page loads
-      document.addEventListener("DOMContentLoaded", function () {
-        // Initialize sidebar functionality
-        initSidebar();
-
-        // Load updates from server
-        loadUpdates();
-
-        // Make update text clickable to open sidebar
-        const updateText = document.querySelector(".minecraft-update-text");
-        if (updateText) {
-          updateText.addEventListener("click", function () {
-            const sidebar = document.getElementById("update-sidebar");
-            const floatingToggle = document.getElementById("floating-toggle");
-
-            // Open the sidebar
-            sidebar.classList.add("open");
-            floatingToggle.classList.add("hidden");
-
-            // Update the toggle button text
-            const sidebarToggle = document.getElementById("sidebar-toggle");
-            if (sidebarToggle) {
-              sidebarToggle.textContent = "←";
-            }
-          });
-        }
-
-        createParticles();
-        // Lock landing container layout after initial paint to avoid re-centering jitter
-        requestAnimationFrame(() => {
-          const lc = document.querySelector(".landing-container");
-          if (lc) lc.classList.add("stabilized");
-        });
-
-        // Debug: Force stats panel visibility
-        const statsPanel = document.getElementById("stats-panel");
-        const liveStats = document.getElementById("live-stats");
-
-        console.log("🔍 Stats panel element:", statsPanel);
-        console.log("🔍 Live stats element:", liveStats);
-
-        if (liveStats) {
-          liveStats.style.display = "flex";
-          liveStats.style.visibility = "visible";
-          liveStats.style.opacity = "1";
-          liveStats.style.background = "rgba(42, 42, 42, 0.95)";
-          console.log("✅ Forced live stats visibility");
-        } else {
-          console.error("❌ Live stats element not found!");
-        }
-
-        // Interactive logo effects
-        const logo = document.getElementById("logo_IBU");
-        const mainContainer = document.getElementById("main-container");
-        const textPanel = document.getElementById("text-panel");
-        const backButton = document.getElementById("back-button");
-        const typewriterText = document.getElementById("typewriter-text");
-
-        let isExpanded = false;
-
-        // Logo hover effects (class-based to ensure consistent reset)
-        logo.addEventListener("mouseenter", function () {
-          this.classList.add("logo-hover");
-        });
-        logo.addEventListener("mouseleave", function () {
-          this.classList.remove("logo-hover");
-        });
-
-        // Logo click functionality with toggle
-        logo.addEventListener("click", function () {
-          const mainContainer = document.getElementById("main-container");
-          const textPanel = document.getElementById("text-panel");
-          const titleElement = document.querySelector(".text-content h2");
-          const textElement = document.getElementById("typewriter-text");
-          const buttonElement = document.getElementById("back-button"); // Add button reference
-
-          if (!isExpanded) {
-            isExpanded = true;
-
-            // Mobile vs Desktop logic
-            if (window.innerWidth <= 768) {
-              textPanel.classList.add("active");
-            } else {
-              mainContainer.style.transform = "translateX(-25%)";
-              textPanel.style.transform = "translateX(0)";
-              textPanel.style.opacity = "1";
-            }
-
-            // Add text content and trigger fade-in
-            setTimeout(() => {
-              // Set the body text content (your specific text)
-              textElement.innerHTML = `We are Intelligent Beings United!<br><br>
-        Welcome to our dashboard, your comprehensive tool for analyzing team performance and statistics.
-
-This dashboard provides daily insights into team data, allowing you to:<br><br>
-
-• Track team members points<br>
-• Analyze performance metrics over time<br>
-• See individual team member contributions<br>
-• Export data for further analysis<br><br>
-
-The system automatically scrapes and updates team information, ensuring you always have the latest data at your fingertips.<br><br>
-
-For more information, join our <a href="https://discord.com/invite/2S2WZMznVJ" target="_blank" style="color: rgba(224, 97, 80, 1); text-decoration: none;">I.B.U. Discord Server</a> !`;
-
-              // Trigger title fade-in (first)
-              setTimeout(() => {
-                titleElement.classList.add("fade-in");
-              }, 200);
-
-              // Trigger text fade-in (second)
-              setTimeout(() => {
-                textElement.classList.add("fade-in");
-              }, 500);
-
-              // Trigger button fade-in (last)
-              setTimeout(() => {
-                buttonElement.classList.add("fade-in");
-              }, 800);
-            }, 600);
-          } else {
-            // Close panel
-            isExpanded = false;
-
-            // Remove fade-in classes from all elements
-            titleElement.classList.remove("fade-in");
-            textElement.classList.remove("fade-in");
-            buttonElement.classList.remove("fade-in"); // Add button cleanup
-
-            if (window.innerWidth <= 768) {
-              textPanel.classList.remove("active");
-            } else {
-              mainContainer.style.transform = "translateX(0)";
-              textPanel.style.transform = "translateX(100%)";
-              textPanel.style.opacity = "0";
-            }
-
-            // Clear text content after animation
-            setTimeout(() => {
-              textElement.innerHTML = "";
-            }, 600);
-          }
-        });
-
-        // Back button functionality
-        backButton.addEventListener("click", function () {
-          const titleElement = document.querySelector(".text-content h2");
-          const textElement = document.getElementById("typewriter-text");
-          const buttonElement = document.getElementById("back-button");
-
-          isExpanded = false;
-
-          // Remove fade-in classes
-          titleElement.classList.remove("fade-in");
-          textElement.classList.remove("fade-in");
-          buttonElement.classList.remove("fade-in");
-
-          if (window.innerWidth <= 768) {
-            textPanel.classList.remove("active");
-          } else {
-            mainContainer.style.transform = "translateX(0)";
-            textPanel.style.transform = "translateX(100%)";
-            textPanel.style.opacity = "0";
-          }
-
-          // Clear text content after animation
-          setTimeout(() => {
-            textElement.innerHTML = "";
-          }, 600);
-        });
-
-        // Handle window resize
-        window.addEventListener("resize", function () {
-          if (textPanel.style.opacity === "1") {
-            textPanel.classList.remove("active");
-            mainContainer.style.transform = "translateX(0)";
-            textPanel.style.transform = "translateX(100%)";
-            textPanel.style.opacity = "0";
-            typewriterText.innerHTML = "";
-            typewriterText.classList.remove("fade-in");
-          }
-        });
-      });
-
-      // Add this script to index_IBU.html to load live stats
-
-      async function loadLiveStats() {
-        console.log("🔄 Loading live stats...");
-        const statsContainer = document.getElementById("live-stats");
-
-        // Show loading state
-        statsContainer.innerHTML = `
-        <h3>Statistics Overview</h3>
-        <div class="stat-item">
-          <span class="stat-icon">🔄</span>
-          <span class="stat-label">Loading data...</span>
-        </div>
-      `;
-
-        try {
-          // Try the simple stats endpoint first
-          console.log("📡 Fetching from /get_simple_stats...");
-          const response = await fetch("/get_simple_stats");
-          console.log("📡 Stats response status:", response.status);
-
-          if (response.ok) {
-            const data = await response.json();
-            console.log("📦 Stats data received:", data);
-
-            if (data.success && data.stats) {
-              const stats = data.stats;
-              console.log("✅ Processing stats:", stats);
-
-              statsContainer.innerHTML = `
-              <h3>Statistics Overview</h3>
-              <div class="stat-item">
-                <span class="stat-icon">🏆</span>
-                <span class="stat-label">Total Team Points:</span>
-                <span class="stat-value">${stats.total_points.toLocaleString()}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-icon">👥</span>
-                <span class="stat-label">Members:</span>
-                <span class="stat-value">${stats.active_members}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-icon">⭐</span>
-                <span class="stat-label">Top 10 Performers:</span>
-              </div>
-              <div class="top-performers">
-                ${stats.top_performers
-                  .map(
-                    (performer, index) => `
-                  <div class="performer-item">
-                    <span class="performer-rank">${index + 1}.</span>
-                    <span class="performer-name">${performer.name}</span>
-                    <span class="performer-points">${performer.points.toLocaleString()}</span>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>
-            `;
-
-              console.log("✅ Stats UI updated successfully");
-              document.getElementById("stats-panel").classList.add("loaded");
-              // Reapply saved position now that content height is finalized
-              try {
-                if (window.__reapplyStatsPanelPosition)
-                  window.__reapplyStatsPanelPosition();
-              } catch {}
-              return; // Success, exit function
-            } else {
-              console.error("❌ Invalid stats data structure:", data);
-              throw new Error(data.error || "Invalid stats data structure");
-            }
-          } else {
-            const errorText = await response.text();
-            console.error("❌ HTTP error response:", errorText);
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-        } catch (error) {
-          console.error("❌ Stats loading failed:", error);
-
-          // Show error state with retry
-          statsContainer.innerHTML = `
-          <h3>📊 Statistics</h3>
-          <div class="stat-item">
-            <span class="stat-icon">⚠️</span>
-            <span class="stat-label">Failed to load data</span>
-          </div>
-          <div class="stat-item" style="font-size: 0.8rem; color: #999;">
-            <span class="stat-label">Error: ${error.message}</span>
-          </div>
-          <div class="stat-item">
-            <button onclick="loadLiveStats()" style="background: rgba(224, 97, 80, 0.8); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">
-              🔄 Retry Loading
-            </button>
-          </div>
-        `;
-          document.getElementById("stats-panel").classList.add("loaded");
-          // Reapply saved position even on error layout
-          try {
-            if (window.__reapplyStatsPanelPosition)
-              window.__reapplyStatsPanelPosition();
-          } catch {}
-        }
-      }
-
-      // File monitoring and update functions
-      let lastKnownFile = "";
-      let fileCheckInterval;
-
-      function updateFileInfo() {
-        fetch("/get_latest_file_info")
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success) {
-              const latestDateElement = document.getElementById("latest_date");
-              const appInfoElement = document.querySelector(".app-info");
-
-              // Update the "New data received" text
-              if (latestDateElement) {
-                latestDateElement.textContent = `New data received ${data.time_ago}`;
-              }
-
-              // Update the "Data from" text
-              if (appInfoElement) {
-                appInfoElement.textContent = `Data from ${data.latest_date}`;
-              }
-
-              // Check if this is a new file (different from last known)
-              if (lastKnownFile && lastKnownFile !== data.latest_file) {
-                console.log("🆕 New file detected:", data.latest_file);
-
-                // Show a subtle notification or animation
-                if (latestDateElement) {
-                  latestDateElement.style.animation = "pulse 2s ease-in-out";
-                  setTimeout(() => {
-                    latestDateElement.style.animation = "";
-                  }, 2000);
-                }
-
-                // Refresh stats when new file is detected
-                loadLiveStats();
-              }
-
-              lastKnownFile = data.latest_file;
-              console.log("📄 File info updated:", data);
-            } else {
-              console.log("⚠️ No file info available:", data.message);
-            }
-          })
-          .catch((error) => {
-            console.error("Error updating file info:", error);
-          });
-      }
-
-      function startFileMonitoring() {
-        // Update immediately
-        updateFileInfo();
-
-        // Then check every 30 seconds for new files
-        fileCheckInterval = setInterval(updateFileInfo, 30000);
-        console.log("File monitoring started - checking every 30 seconds");
-      }
-
-      function stopFileMonitoring() {
-        if (fileCheckInterval) {
-          clearInterval(fileCheckInterval);
-          console.log("File monitoring stopped");
-        }
-      }
-
-      // Load stats and check files when page loads
-      document.addEventListener("DOMContentLoaded", function () {
-        // Load stats immediately
-        setTimeout(() => {
-          console.log("Loading stats...");
-          loadLiveStats();
-        });
-
-        // Start monitoring for file changes
-        setTimeout(() => {
-          console.log("tarting file monitoring...");
-          startFileMonitoring();
-        }, 1500);
-      });
-    </script>
-  </body>
-</html>
+  </div>
+  {% endblock %}
+</div>
