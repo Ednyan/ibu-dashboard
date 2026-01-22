@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Improved
+
+- Reorganized html files into blocks
+- Mobile friendly UI
+
+### Changed
+
+- Switched from custom css to tailwind
+
+### Added
+
+- Point gain over the last day on the team overview section
+
+---
+
 ## [1.1.3] - 2026-01-18
 
 ### Changed
