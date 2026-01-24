@@ -26,6 +26,8 @@ import threading
 import logging
 import time
 from dotenv import load_dotenv
+from werkzeug.exceptions import HTTPException
+
 
 # Rust imports
 from rustlibs import get_csv_files_from_folder
@@ -710,6 +712,33 @@ def get_custom_text(values, labels):
 
 
 app = Flask(__name__)  # . .venv/bin/activate
+
+
+# Handle http errors (400s)
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    return render_template(
+        "error.html",
+        code=e.code,
+        name=e.name,
+        description=e.description,
+        error=e,
+        debug=app.debug,
+    ), e.code
+
+
+# Handle other errors (500s)
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return render_template(
+        "error.html",
+        code=500,
+        name="Internal Server Error",
+        description="Something went wrong on our end.",
+        error=e,
+        debug=app.debug,
+    ), 500
+
 
 # Configure Flask session
 app.secret_key = os.getenv(
