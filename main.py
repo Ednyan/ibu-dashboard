@@ -1065,7 +1065,7 @@ def visualization():
 
     # Don't pre-load chart data - let the frontend handle it via AJAX
     return render_template(
-        "graphs-modern.html",
+        "team-info.html",
         labels=[],
         values=[],
         colors=[],
