@@ -1,4 +1,4 @@
-<header class="sticky top-0 z-40 border-b border-white/10 backdrop-blur">
+<header class="top-0 z-40 relative border-b border-white/10 backdrop-blur">
   <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
     <a href="/" class="flex items-center gap-3">
       <img
@@ -70,9 +70,9 @@
   </div>
   <nav
     id="mobile-menu"
-    class="sm:hidden fixed left-0 right-0 top-[64px] z-500 max-h-0 overflow-hidden border-t border-white/10 bg-black/80 backdrop-blur transition-[max-height,opacity] duration-300 ease-out opacity-0"
+    class="sm:hidden absolute left-0 right-0 top-full z-40 max-h-0 overflow-hidden border-t border-white/10 bg-black/70 backdrop-blur-2xl transition-[max-height,opacity] duration-300 ease-out opacity-0 rounded-2xl mr-3 mt-3 ml-3"
   >
-    <div class="flex flex-col gap-1 px-4 py-3">
+    <div class="flex flex-col gap-1 px-4 py-4">
       <a
         href="{{ url_for('visualization') }}"
         class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
@@ -95,7 +95,7 @@
       >
         <img
           src="{{ url_for('static', filename='discord-icon.svg') }}"
-          alt="Git"
+          alt="Discord"
           class="h-6 w-6"
       /></a>
     </div>
