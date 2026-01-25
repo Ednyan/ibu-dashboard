@@ -727,19 +727,6 @@ def handle_http_exception(e):
     ), e.code
 
 
-# Handle other errors (500s)
-@app.errorhandler(Exception)
-def handle_exception(e):
-    return render_template(
-        "error.html",
-        code=500,
-        name="Internal Server Error",
-        description="Something went wrong on our end.",
-        error=e,
-        debug=app.debug,
-    ), 500
-
-
 # Configure Flask session
 app.secret_key = os.getenv(
     "FLASK_SECRET_KEY", "ibu-dashboard-secret-key-change-in-production"
