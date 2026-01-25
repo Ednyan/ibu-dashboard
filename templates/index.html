@@ -1,5 +1,15 @@
-{% extends "base.html" %} {% block title %}I.B.U. Dashboard{% endblock %} {%
-block content %}
+{% extends "base.html" %} {% block title %}I.B.U. Dashboard{% endblock %} {% set
+extra_nav_buttons_mobile %}
+<button
+  type="button"
+  id="overview-toggle"
+  class="rounded-lg px-3 py-2 text-sm font-medium text-white/80 hover:text-white transition-all duration-150 ease-out inline-flex items-center justify-center"
+  aria-controls="stats-panel"
+  aria-expanded="false"
+>
+  Overview
+</button>
+{% endset %}{% block content %}
 
 <div
   class="fixed left-1/2 top-1/2 z-30 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-5 pointer-events-none"
@@ -157,5 +167,19 @@ block content %}
       {% endif %}
     </div>
   </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("overview-toggle");
+      const panel = document.getElementById("stats-panel");
+      if (!btn || !panel) return;
+
+      btn.addEventListener("click", () => {
+        panel.classList.toggle("hidden");
+        const isOpen = !panel.classList.contains("hidden");
+        btn.setAttribute("aria-expanded", String(isOpen));
+      });
+    });
+  </script>
+
   {% endblock %}
 </div>
