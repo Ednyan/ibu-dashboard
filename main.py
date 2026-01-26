@@ -980,70 +980,163 @@ def index():
     )
 
 
+# Helper for switching plotly -> chartjs
+def to_chartjs_payload(plotly_like):
+    if not isinstance(plotly_like, dict):
+        return {"error": "Invalid chart data format."}
+
+    if "error" in plotly_like:
+        return plotly_like
+
+    trace = None
+    data = plotly_like.get("data")
+    if isinstance(data, list) and data:
+        trace = data[0]
+
+    if not isinstance(trace, dict):
+        return {"error": "Invalid chart trace."}
+
+    labels = trace.get("labels") or []
+    values = trace.get("values") or []
+
+    if (
+        not isinstance(labels, list)
+        or not isinstance(values, list)
+        or len(labels) != len(values)
+    ):
+        return {"error": "Invalid labels/values."}
+
+    marker = trace.get("marker") or {}
+    colors = marker.get("colors") or []
+
+    # JSON-safe numerics
+    clean_values = []
+    for v in values:
+        try:
+            clean_values.append(int(v))
+        except Exception:
+            clean_values.append(0)
+
+    total = sum(clean_values)
+    active = sum(1 for v in clean_values if v > 0)
+
+    payload = {
+        "labels": [str(x) for x in labels],
+        "values": clean_values,
+        "colors": [str(c) for c in colors] if isinstance(colors, list) else [],
+        "meta": {
+            "total": total,
+            "active_members": active,
+            "hole": trace.get("hole", 0.6),
+        },
+    }
+
+    return payload
+
+
 @app.route("/get_chart_data")
 def get_chart_data():
     chart_type = request.args.get("type")
     start = request.args.get("start")
     end = request.args.get("end")
 
+    def ok(data):
+        if not data or ("error" in data):
+            return None
+        return jsonify(to_chartjs_payload(data))
+
     if chart_type == "last_day":
         data = get_last_day_data()
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the last day."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the last day."}),
+                400,
+            )
+        )
+
     elif chart_type == "last_week":
         data = get_last_week_range()
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the selected range."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the selected range."}),
+                400,
+            )
+        )
+
     elif chart_type == "last_month":
         data = get_last_month_range()
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the selected range."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the selected range."}),
+                400,
+            )
+        )
+
     elif chart_type == "last_year":
         data = get_last_year_range()
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the selected range."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the selected range."}),
+                400,
+            )
+        )
+
     elif chart_type == "last_90_days":
         data = get_last_90_days_range()
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the selected range."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the selected range."}),
+                400,
+            )
+        )
+
     elif chart_type == "last_180_days":
         data = get_last_180_days_range()
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the selected range."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the selected range."}),
+                400,
+            )
+        )
+
     elif chart_type == "custom" and start and end:
         start_date = datetime.strptime(start, "%Y-%m-%d").date()
         end_date = datetime.strptime(end, "%Y-%m-%d").date()
         data = get_chart_data_for_range(start_date, end_date)
-        if not data or "error" in data:
-            return jsonify(
-                {"error": "Not enough data available for the selected range."}
-            ), 400
-        return jsonify(data)
+        out = ok(data)
+        return (
+            out
+            if out
+            else (
+                jsonify({"error": "Not enough data available for the selected range."}),
+                400,
+            )
+        )
+
     elif chart_type == "total":
         data = get_chart_total()
-        if not data or "error" in data:
-            return jsonify({"error": "Not enough data available."}), 400
-        return jsonify(data)
-    else:
-        return jsonify({"error": "Invalid request"}), 400
+        out = ok(data)
+        return out if out else (jsonify({"error": "Not enough data available."}), 400)
+
+    return jsonify({"error": "Invalid request"}), 400
 
 
 @app.route("/visualization")

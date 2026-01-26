@@ -1,1265 +1,374 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>I.B.U. TEAM DATA</title>
+{% extends "base.html" %} {% block title %}I.B.U. TEAM DATA{% endblock %} {%
+block head %} {{ super() }}
+<!-- jQuery and jQuery UI for custom datepicker -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<link
+  rel="stylesheet"
+  href="https://code.jquery.com/ui/1.13.2/themes/ui-lightness/jquery-ui.css"
+/>
 
-    <!-- jQuery and jQuery UI for custom datepicker -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-    <link
-      rel="stylesheet"
-      href="https://code.jquery.com/ui/1.13.2/themes/ui-lightness/jquery-ui.css"
-    />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="{{ url_for('static', filename='ibu-icon.svg') }}"
-    />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="{{ url_for('static', filename='graphs-modern.css') }}"
-    />
-  </head>
-  <body>
-    <!-- Particles background -->
-    <div class="particles-container" id="particles"></div>
+<link
+  rel="icon"
+  type="image/svg+xml"
+  href="{{ url_for('static', filename='ibu-icon.svg') }}"
+/>
 
-    <!-- Background gradient overlay -->
-    <div class="background-overlay"></div>
+{% endblock %} {% block content %}
 
-    <!-- Main container -->
-    <div class="main-container">
-      <!-- Header section -->
-      <header class="header-section">
-        <div class="header-content">
-          <div class="title-section">
-            <h1 class="main-title animate-slide-up">TEAM DATA VISUALIZATION</h1>
-            <p class="subtitle animate-slide-up" style="animation-delay: 0.2s">
-              New data received {{ time_ago }} ({{ latest_date }})
-            </p>
-          </div>
-          <div class="header-buttons">
-            <button
-              class="nav-button animate-slide-up"
-              style="animation-delay: 0.4s"
-              onclick="downloadCSVFiles()"
-            >
-              <span>Download Data</span>
-            </button>
-            <button
-              class="nav-button animate-slide-up"
-              style="animation-delay: 0.5s"
-              onclick="window.location.href='{{ url_for('index') }}'"
-            >
-              <span>Main Page</span>
-            </button>
-          </div>
-        </div>
-      </header>
+<div class="w-full relative px-4 py-8 sm:px-6">
+  <!-- Header + Controls -->
+  <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+    <header
+      class="relative rounded-2xl border border-white/10 bg-linear-to-br from-white/10 to-white/5 p-6 backdrop-blur"
+    >
+      <h1 class="text-2xl font-semibold tracking-tight sm:text-3xl">
+        Team Info
+      </h1>
 
-      <!-- Horizontal Navigation -->
-      <nav
-        class="horizontal-nav animate-slide-up"
-        style="animation-delay: 0.4s"
-      >
-        <a href="{{ url_for('visualization') }}" class="nav-tab active">
-          <span class="nav-icon">📊</span>
-          <span>Points Data</span>
-        </a>
-        <a href="{{ url_for('trends') }}" class="nav-tab">
-          <span class="nav-icon">📈</span>
-          <span>Trends</span>
-        </a>
-        <a href="{{ url_for('member_info') }}" class="nav-tab">
-          <span class="nav-icon">👥</span>
-          <span>Member Tracking</span>
-        </a>
-      </nav>
+      <div class="mt-3 h-px w-full bg-white/10"></div>
 
-      <!-- Control panel -->
-      <div
-        class="control-section animate-slide-up"
-        style="animation-delay: 0.6s"
-      >
-        <div class="control-panel">
-          <div class="selector-group">
-            <label for="chartSelector" class="control-label"
-              >Choose chart:</label
-            >
-            <select id="chartSelector" class="modern-select">
-              <option value="total">Total</option>
-              <option value="last_day">Last Day</option>
-              <option value="last_week">Last Week</option>
-              <option value="last_month">Last Month</option>
-              <option value="last_90_days">Last 90 Days</option>
-              <option value="last_180_days">Last 180 Days</option>
-              <option value="last_year">Last Year</option>
-              <option value="custom">Custom Date</option>
-            </select>
-            <div id="dateRangeDisplay" class="date-range-display">
-              <span class="range-label">Showing:</span>
-              <span id="rangeText" class="range-text">Loading...</span>
-            </div>
-          </div>
+      <p class="mt-3 text-sm text-slate-300">
+        Data from
+        <span class="font-medium text-slate-100">{{ time_ago }}</span>
+        <span class="text-slate-400">({{ latest_date }})</span>
+      </p>
+    </header>
 
-          <div class="date-controls" id="dateControls">
-            <input
-              type="text"
-              id="startDate"
-              class="date-input custom-datepicker"
-              placeholder="Start Date"
-              readonly
-            />
-            <input
-              type="text"
-              id="endDate"
-              class="date-input custom-datepicker"
-              placeholder="End Date"
-              readonly
-            />
-            <button id="applyCustomRange" class="apply-button">
-              Apply Range
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Main content area -->
-      <div class="content-section">
-        <!-- Chart area -->
-        <main
-          class="chart-section animate-slide-up"
-          style="animation-delay: 0.8s"
+    <!-- Controls Card -->
+    <section
+      class="lg:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+    >
+      <div class="flex flex-col gap-6">
+        <!-- Range Selector -->
+        <div
+          class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div class="chart-container">
-            <div class="chart-header">
-              <h2 class="chart-title">Team Performance Analysis</h2>
-              <div class="chart-info">
-                <span class="info-badge">Interactive Chart</span>
-              </div>
-            </div>
-
-            <div class="chart-wrapper">
-              <div id="pointsPieChart" class="chart-area"></div>
-
-              <!-- Loading overlay -->
-              <div id="loadingOverlay" class="loading-overlay">
-                <div class="loading-content">
-                  <div class="loading-spinner"></div>
-                  <div class="loading-text">Loading chart data...</div>
-                  <div class="loading-subtext">
-                    Please wait while we fetch your data
-                  </div>
-                </div>
-              </div>
-
-              <!-- Chart instructions -->
-              <div class="chart-instructions">
-                <p>
-                  💡 <strong>Tip:</strong> Click legend items to hide/show data
-                  segments
-                </p>
-              </div>
-            </div>
+          <div class="flex items-center gap-3">
+            <label
+              for="chartSelector"
+              class="text-sm font-medium text-slate-200"
+            >
+              Select Date Range
+            </label>
           </div>
-        </main>
-      </div>
-    </div>
 
-    <!-- Scripts -->
-    <script>
-      // Particle system (same as index page)
-      function createParticles() {
-        const container = document.getElementById("particles");
-        const particleCount = 20; // Slightly more particles for data visualization theme
-
-        for (let i = 0; i < particleCount; i++) {
-          const particle = document.createElement("div");
-          particle.className = "particle";
-
-          // Random size between 2-8px
-          const size = Math.random() * 6 + 2;
-          particle.style.width = size + "px";
-          particle.style.height = size + "px";
-
-          // Random position
-          particle.style.left = Math.random() * 100 + "%";
-          particle.style.top = Math.random() * 100 + "%";
-
-          // Random animation delay and duration
-          particle.style.animationDelay = Math.random() * 8 + "s";
-          particle.style.animationDuration = Math.random() * 4 + 6 + "s";
-
-          container.appendChild(particle);
-        }
-      }
-
-      // Download CSV files function - now shows modal first
-      function downloadCSVFiles() {
-        openDownloadModal();
-      }
-
-      // Open the download modal
-      function openDownloadModal() {
-        const modal = document.getElementById("downloadModal");
-        modal.style.display = "block";
-
-        // Set default date range (last month)
-        setQuickRange("month");
-
-        // Update file count
-        updateFileCount();
-      }
-
-      // Close the download modal
-      function closeDownloadModal() {
-        const modal = document.getElementById("downloadModal");
-        modal.style.display = "none";
-      }
-
-      // Set quick date ranges
-      function setQuickRange(range) {
-        const today = new Date();
-        const startDate = document.getElementById("modalStartDate");
-        const endDate = document.getElementById("modalEndDate");
-
-        // Format date as YYYY-MM-DD for input[type="date"]
-        const formatDate = (date) => {
-          return date.toISOString().split("T")[0];
-        };
-
-        endDate.value = formatDate(today);
-
-        switch (range) {
-          case "week":
-            const weekAgo = new Date(today);
-            weekAgo.setDate(today.getDate() - 7);
-            startDate.value = formatDate(weekAgo);
-            break;
-          case "month":
-            const monthAgo = new Date(today);
-            monthAgo.setMonth(today.getMonth() - 1);
-            startDate.value = formatDate(monthAgo);
-            break;
-          case "3months":
-            const threeMonthsAgo = new Date(today);
-            threeMonthsAgo.setMonth(today.getMonth() - 3);
-            startDate.value = formatDate(threeMonthsAgo);
-            break;
-          case "all":
-            // Set to earliest available CSV date instead of hardcoded date
-            if (availableDates && availableDates.length > 0) {
-              // Sort available dates and get the earliest one
-              const sortedDates = [...availableDates].sort();
-              startDate.value = sortedDates[0];
-            } else {
-              // Fallback to a reasonable default if no dates are available
-              startDate.value = "2023-01-01";
-            }
-            break;
-        }
-
-        updateFileCount();
-      }
-
-      // Update file count based on selected date range
-      function updateFileCount() {
-        const startDate = document.getElementById("modalStartDate").value;
-        const endDate = document.getElementById("modalEndDate").value;
-        const fileCountText = document.getElementById("fileCountText");
-
-        if (!startDate || !endDate) {
-          fileCountText.textContent = "Please select both start and end dates";
-          return;
-        }
-
-        // Make an API call to get file count for the selected range
-        fetch(`/api/file_count?start_date=${startDate}&end_date=${endDate}`)
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.error) {
-              fileCountText.textContent = data.error;
-            } else {
-              fileCountText.textContent = `${data.file_count} CSV files available in this date range`;
-            }
-          })
-          .catch((error) => {
-            fileCountText.textContent = "Error checking file count";
-          });
-      }
-
-      // Process the download with selected date range
-      function processDownload() {
-        const startDate = document.getElementById("modalStartDate").value;
-        const endDate = document.getElementById("modalEndDate").value;
-
-        if (!startDate || !endDate) {
-          showNotification(
-            "❌ Please select both start and end dates",
-            "error"
-          );
-          return;
-        }
-
-        if (new Date(startDate) > new Date(endDate)) {
-          showNotification("❌ Start date cannot be after end date", "error");
-          return;
-        }
-
-        // Close modal
-        closeDownloadModal();
-
-        // Show loading notification
-        showNotification("Preparing download...", "info");
-
-        // Create download URL with date parameters
-        const downloadUrl = `/download_csv_files?start_date=${startDate}&end_date=${endDate}`;
-
-        fetch(downloadUrl)
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.blob();
-          })
-          .then((blob) => {
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.style.display = "none";
-            a.href = url;
-
-            // Generate filename with date range
-            const startFormatted = startDate.replace(/-/g, "");
-            const endFormatted = endDate.replace(/-/g, "");
-            a.download = `IBU_Team_Data_${startFormatted}_to_${endFormatted}.zip`;
-
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-
-            showNotification("✅ Download started successfully!", "success");
-          })
-          .catch((error) => {
-            console.error("Download error:", error);
-            showNotification("❌ Download failed. Please try again.", "error");
-          });
-      }
-
-      // Close modal when clicking outside of it
-      window.onclick = function (event) {
-        const modal = document.getElementById("downloadModal");
-        if (event.target === modal) {
-          closeDownloadModal();
-        }
-      };
-
-      // Update file count when dates change
-      document.addEventListener("DOMContentLoaded", function () {
-        const modalStartDate = document.getElementById("modalStartDate");
-        const modalEndDate = document.getElementById("modalEndDate");
-
-        if (modalStartDate && modalEndDate) {
-          modalStartDate.addEventListener("change", updateFileCount);
-          modalEndDate.addEventListener("change", updateFileCount);
-        }
-      });
-
-      // Global variables - initialize safely (PRESERVE ORIGINAL FUNCTIONALITY)
-      let labels = [];
-      let dataValues = [];
-      let hiddenIndices = new Set();
-      let total = 0;
-      let currentValues = [];
-      let visibilityState = [];
-
-      const chartSelector = document.getElementById("chartSelector");
-      const startDateInput = document.getElementById("startDate");
-      const endDateInput = document.getElementById("endDate");
-      const applyBtn = document.getElementById("applyCustomRange");
-
-      // PRESERVE ALL ORIGINAL CHART FUNCTIONALITY
-      chartSelector.addEventListener("change", () => {
-        const isCustom = chartSelector.value === "custom";
-        const dateControls = document.getElementById("dateControls");
-
-        // Modern animation for date controls
-        if (isCustom) {
-          dateControls.classList.add("active");
-        } else {
-          dateControls.classList.remove("active");
-        }
-
-        // Update date range display
-        updateDateRangeDisplay(chartSelector.value);
-
-        Plotly.purge("pointsPieChart");
-        if (!isCustom) {
-          setTimeout(() => {
-            loadPieChart(chartSelector.value);
-          }, 100);
-        }
-      });
-
-      applyBtn.addEventListener("click", () => {
-        const from = startDateInput.value;
-        const to = endDateInput.value;
-        console.log(
-          "start: ",
-          startDateInput.value,
-          "end: ",
-          endDateInput.value
-        );
-        if (!from || !to) {
-          // Modern alert styling
-          showNotification(
-            "Please select both start and end dates.",
-            "warning"
-          );
-          return;
-        }
-
-        // Update date range display for custom dates
-        updateDateRangeDisplay("custom", from, to);
-
-        loadPieChart("custom", from, to);
-      });
-
-      // Date range display functionality
-      function updateDateRangeDisplay(
-        chartType,
-        startDate = null,
-        endDate = null
-      ) {
-        const rangeDisplay = document.getElementById("dateRangeDisplay");
-        const rangeText = document.getElementById("rangeText");
-
-        if (!rangeDisplay || !rangeText) return;
-
-        rangeDisplay.className = "date-range-display loading";
-        rangeText.textContent = "Loading...";
-
-        // Get the latest date for reference
-        fetch("/get_latest_file_info")
-          .then((response) => response.json())
-          .then((data) => {
-            let displayText = "";
-
-            switch (chartType) {
-              case "total":
-                if (data.success && data.date_str) {
-                  const latestDate = new Date(data.date_str).toLocaleDateString(
-                    "en-US",
-                    {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    }
-                  );
-                  displayText = `Latest data (${latestDate})`;
-                } else {
-                  displayText = "Latest available data";
-                }
-                break;
-
-              case "last_day":
-                if (data.success && data.date_str) {
-                  // Calculate previous day for last day view
-                  const latestDate = new Date(data.date_str);
-                  const previousDate = new Date(latestDate);
-                  previousDate.setDate(previousDate.getDate() - 1);
-
-                  const latest = latestDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  });
-                  const previous = previousDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  });
-
-                  displayText = `${previous} → ${latest}`;
-                } else {
-                  displayText = "Last day comparison";
-                }
-                break;
-
-              case "custom":
-                if (startDate && endDate) {
-                  const start = new Date(startDate).toLocaleDateString(
-                    "en-US",
-                    { month: "short", day: "numeric", year: "numeric" }
-                  );
-                  const end = new Date(endDate).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                  displayText = `${start} → ${end}`;
-                } else {
-                  displayText = "Custom range";
-                }
-                break;
-
-              case "last_week":
-                const todayForWeek = new Date();
-                const currentDay = todayForWeek.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                const daysToLastMonday = currentDay === 0 ? 13 : currentDay + 6; // Adjust for Sunday = 0
-
-                const lastMonday = new Date(todayForWeek);
-                lastMonday.setDate(todayForWeek.getDate() - daysToLastMonday);
-
-                const lastSunday = new Date(lastMonday);
-                lastSunday.setDate(lastMonday.getDate() + 6);
-
-                // Calculate week number
-                const startOfYear = new Date(lastMonday.getFullYear(), 0, 1);
-                const daysSinceStart = Math.floor(
-                  (lastMonday - startOfYear) / (24 * 60 * 60 * 1000)
-                );
-                const weekNumber = Math.ceil(
-                  (daysSinceStart + startOfYear.getDay() + 1) / 7
-                );
-
-                const mondayStr = lastMonday.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
-                const sundayStr = lastSunday.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
-
-                displayText = `${mondayStr} → ${sundayStr} (CW${weekNumber})`;
-                break;
-
-              case "last_month":
-                const todayForMonth = new Date();
-                const lastMonth = new Date(
-                  todayForMonth.getFullYear(),
-                  todayForMonth.getMonth() - 1,
-                  1
-                );
-                const monthName = lastMonth.toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                });
-                displayText = monthName;
-                break;
-
-              case "last_year":
-                const currentYear = new Date().getFullYear();
-                displayText = `Year ${currentYear - 1}`;
-                break;
-              case "last_90_days":
-                if (data.success && data.date_str) {
-                  const end = new Date(data.date_str);
-                  const start = new Date(end);
-                  start.setDate(start.getDate() - 90);
-                  const startStr = start.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                  const endStr = end.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                  displayText = `${startStr} → ${endStr}`;
-                } else {
-                  displayText = "Last 90 days";
-                }
-                break;
-              case "last_180_days":
-                if (data.success && data.date_str) {
-                  const end = new Date(data.date_str);
-                  const start = new Date(end);
-                  start.setDate(start.getDate() - 180);
-                  const startStr = start.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                  const endStr = end.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  });
-                  displayText = `${startStr} → ${endStr}`;
-                } else {
-                  displayText = "Last 180 days";
-                }
-                break;
-
-              default:
-                displayText = "Data range";
-            }
-
-            rangeDisplay.className = "date-range-display";
-            rangeText.textContent = displayText;
-          })
-          .catch((error) => {
-            console.error("Error getting date info:", error);
-            rangeDisplay.className = "date-range-display error";
-            rangeText.textContent = "Date info unavailable";
-          });
-      }
-
-      // Custom datepicker initialization and available dates highlighting
-      let availableDates = [];
-
-      function initializeCustomDatepickers() {
-        // First, load available dates from the server
-        fetch("/get_available_dates")
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success && data.available_dates) {
-              availableDates = data.available_dates;
-              console.log("Available dates loaded:", availableDates);
-
-              // Initialize chart datepickers
-              $("#startDate, #endDate").datepicker({
-                dateFormat: "yy-mm-dd",
-                changeMonth: true,
-                changeYear: true,
-                showAnim: "slideDown",
-                beforeShowDay: function (date) {
-                  const dateString = $.datepicker.formatDate("yy-mm-dd", date);
-                  const isAvailable = availableDates.includes(dateString);
-                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-                  // Priority 1: CSV data available (green background)
-                  if (isAvailable) {
-                    return [
-                      true,
-                      "csv-data-available",
-                      "CSV data available for this date",
-                    ];
-                  }
-
-                  // Priority 2: Weekend styling
-                  if (isWeekend) {
-                    return [true, "weekend-day", "Weekend"];
-                  }
-
-                  // Default: no special styling
-                  return [true, "", ""];
-                },
-                onSelect: function (dateText, inst) {
-                  console.log("Chart date selected:", dateText);
-                },
-              });
-
-              // Initialize modal datepickers with the same styling and functionality
-              $("#modalStartDate, #modalEndDate").datepicker({
-                dateFormat: "yy-mm-dd",
-                changeMonth: true,
-                changeYear: true,
-                showAnim: "slideDown",
-                beforeShowDay: function (date) {
-                  const dateString = $.datepicker.formatDate("yy-mm-dd", date);
-                  const isAvailable = availableDates.includes(dateString);
-                  const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-                  // Priority 1: CSV data available (green background)
-                  if (isAvailable) {
-                    return [
-                      true,
-                      "csv-data-available",
-                      "CSV data available for this date",
-                    ];
-                  }
-
-                  // Priority 2: Weekend styling
-                  if (isWeekend) {
-                    return [true, "weekend-day", "Weekend"];
-                  }
-
-                  // Default: no special styling
-                  return [true, "", ""];
-                },
-                onSelect: function (dateText, inst) {
-                  console.log("Modal date selected:", dateText);
-                  // Update file count when date is selected
-                  updateFileCount();
-                },
-              });
-
-              // Add click handlers to open chart datepickers
-              $("#startDate").on("click focus", function () {
-                $(this).datepicker("show");
-              });
-
-              $("#endDate").on("click focus", function () {
-                $(this).datepicker("show");
-              });
-
-              // Add click handlers to open modal datepickers
-              $("#modalStartDate").on("click focus", function () {
-                $(this).datepicker("show");
-              });
-
-              $("#modalEndDate").on("click focus", function () {
-                $(this).datepicker("show");
-              });
-
-              console.log("Custom datepickers initialized successfully");
-            }
-          })
-          .catch((error) => {
-            console.error("Error loading available dates:", error);
-            // Initialize basic datepickers even if we can't load available dates
-            $(
-              "#startDate, #endDate, #modalStartDate, #modalEndDate"
-            ).datepicker({
-              dateFormat: "yy-mm-dd",
-              changeMonth: true,
-              changeYear: true,
-              showAnim: "slideDown",
-            });
-          });
-      }
-
-      // Call initialization after DOM is ready
-      $(document).ready(function () {
-        initializeCustomDatepickers();
-      });
-
-      // PRESERVE ORIGINAL CHART LOADING FUNCTION
-      function loadPieChart(type, start = null, end = null, retryCount = 0) {
-        if (retryCount > 0) {
-          console.log("Clearing chart state for retry...");
-          try {
-            Plotly.purge("pointsPieChart");
-          } catch (e) {
-            console.log(
-              "Chart purge failed (expected for first load):",
-              e.message
-            );
-          }
-        }
-
-        const loadingOverlay = document.getElementById("loadingOverlay");
-        if (loadingOverlay) {
-          loadingOverlay.style.display = "flex";
-        }
-
-        console.log(
-          `Loading chart: type=${type}, start=${start}, end=${end}, retry=${retryCount}`
-        );
-
-        const fetchDelay = retryCount > 0 && type === "total" ? 1500 : 0;
-
-        setTimeout(() => {
-          fetch(
-            `/get_chart_data?type=${type}&start=${start || ""}&end=${end || ""}`
-          )
-            .then((response) => {
-              console.log(`Response status: ${response.status}`);
-
-              if (loadingOverlay) {
-                loadingOverlay.style.display = "none";
-              }
-
-              if (!response.ok) {
-                // Handle different HTTP status codes
-                if (response.status === 400) {
-                  // Data not available - NO RETRY, show error immediately
-                  return response
-                    .json()
-                    .then((errorData) => {
-                      const backendMessage =
-                        errorData.error ||
-                        "Not enough data available for the selected range.";
-                      console.log("Data not available:", backendMessage);
-                      showNotification(backendMessage, "error");
-                      throw new Error("DATA_NOT_AVAILABLE"); // Special error type
-                    })
-                    .catch((parseError) => {
-                      if (parseError.message === "DATA_NOT_AVAILABLE") {
-                        throw parseError; // Re-throw to prevent retry
-                      }
-                      // If JSON parsing failed, still don't retry for 400 errors
-                      showNotification(
-                        "Not enough data available for the selected range.",
-                        "error"
-                      );
-                      throw new Error("DATA_NOT_AVAILABLE");
-                    });
-                } else {
-                  // Server errors (500+) or other errors - attempt retry
-                  return response
-                    .json()
-                    .then((err) => {
-                      console.error("Server error:", err);
-                      throw err;
-                    })
-                    .catch(() => {
-                      console.error("Failed to parse error response");
-                      throw {
-                        error:
-                          "Server temporarily unavailable. Please try again.",
-                      };
-                    });
-                }
-              }
-
-              return response.json();
-            })
-            .then((data) => {
-              console.log("Received data:", data);
-
-              if (data.error) {
-                console.error("Data error:", data.error);
-
-                // Only retry for server errors, not data availability errors
-                if (
-                  retryCount < 3 &&
-                  !data.error.toLowerCase().includes("not available") &&
-                  !data.error.toLowerCase().includes("required files")
-                ) {
-                  const retryDelay = retryCount === 0 ? 1000 : 2000;
-                  console.log(
-                    `Retrying chart load in ${retryDelay}ms... (attempt ${
-                      retryCount + 1
-                    })`
-                  );
-                  setTimeout(() => {
-                    loadPieChart(type, start, end, retryCount + 1);
-                  }, retryDelay);
-                  return;
-                }
-
-                // Show the actual error message from backend
-                showNotification(data.error, "error");
-                return;
-              }
-
-              const trace = Array.isArray(data) ? data[0] : data.data[0];
-
-              if (
-                !trace ||
-                !trace.labels ||
-                !trace.values ||
-                trace.labels.length === 0
-              ) {
-                console.error("Invalid or empty data received:", trace);
-
-                if (retryCount < 3) {
-                  console.log(
-                    `Retrying due to invalid data... (attempt ${
-                      retryCount + 1
-                    })`
-                  );
-                  setTimeout(() => {
-                    loadPieChart(type, start, end, retryCount + 1);
-                  }, 1500);
-                  return;
-                }
-
-                showNotification(
-                  "No data available to display the chart.",
-                  "warning"
-                );
-                return;
-              }
-
-              labels.length = 0;
-              dataValues.length = 0;
-
-              trace.labels.forEach((l) => labels.push(l));
-              trace.values.forEach((v) => dataValues.push(v));
-              visibilityState = new Array(trace.labels.length).fill(true);
-
-              Plotly.react("pointsPieChart", data);
-              const plotDiv = document.getElementById("pointsPieChart");
-              if (plotDiv) {
-                plotDiv.on("plotly_legendclick", legendClickHandler);
-                plotDiv.on(
-                  "plotly_legenddoubleclick",
-                  legendDoubleClickHandler
-                );
-              }
-
-              // If backend provided the exact pulled date range, reflect it in the "Showing" section
-              try {
-                const typeUsed = type;
-                if (
-                  (typeUsed === "last_90_days" ||
-                    typeUsed === "last_180_days") &&
-                  data &&
-                  data.date_range
-                ) {
-                  const rangeDisplay =
-                    document.getElementById("dateRangeDisplay");
-                  const rangeText = document.getElementById("rangeText");
-                  if (rangeDisplay && rangeText) {
-                    const start = new Date(
-                      data.date_range.start
-                    ).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    });
-                    const end = new Date(
-                      data.date_range.end
-                    ).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    });
-                    rangeDisplay.className = "date-range-display";
-                    rangeText.textContent = `${start} → ${end}`;
-                  }
-                }
-              } catch (e) {
-                console.debug("Range display update skipped:", e);
-              }
-
-              // Success message
-              showNotification(
-                `Chart loaded successfully! (${trace.labels.length} members)`,
-                "success"
-              );
-              console.log("Data loaded successfully:", data);
-            })
-            .catch((err) => {
-              if (loadingOverlay) {
-                loadingOverlay.style.display = "none";
-              }
-              console.error("Load error:", err);
-
-              // Don't retry if it's a data availability error
-              if (err.message === "DATA_NOT_AVAILABLE") {
-                console.log("Data not available, not retrying.");
-                return;
-              }
-
-              // Only retry for network/server errors
-              if (retryCount < 3) {
-                const retryDelay = retryCount === 0 ? 1000 : 2000;
-                console.log(
-                  `Retrying chart load due to error in ${retryDelay}ms... (attempt ${
-                    retryCount + 1
-                  })`
-                );
-                setTimeout(() => {
-                  loadPieChart(type, start, end, retryCount + 1);
-                }, retryDelay);
-                return;
-              }
-
-              showNotification(
-                err.error ||
-                  "Failed to load chart data. Please try refreshing the page.",
-                "error"
-              );
-            });
-        }, fetchDelay);
-      }
-
-      // PRESERVE ORIGINAL LEGEND HANDLERS
-      function legendDoubleClickHandler(eventData) {
-        return false;
-      }
-
-      function legendClickHandler(eventData) {
-        const chart = document.getElementById("pointsPieChart");
-        const clickedLabel = eventData.label;
-        const clickedIndex = labels.indexOf(clickedLabel);
-
-        visibilityState[clickedIndex] = !visibilityState[clickedIndex];
-
-        let updatedValues = dataValues.map((val, i) =>
-          visibilityState[i] ? val : 0
-        );
-        const totalVisible = updatedValues.reduce((sum, v) => sum + v, 0);
-
-        const updatedText = updatedValues.map((val, i) => {
-          if (val === 0 || totalVisible === 0) return "";
-          const percent = (val / totalVisible) * 100;
-          return percent >= 0.95 ? `${labels[i]} (${percent.toFixed(1)}%)` : "";
-        });
-
-        chart.classList.add("fade-out");
-
-        setTimeout(() => {
-          Plotly.restyle("pointsPieChart", {
-            values: [updatedValues],
-            text: [updatedText],
-          });
-
-          setTimeout(() => {
-            const legendItems = document.querySelectorAll(
-              "#pointsPieChart .legendtext"
-            );
-            legendItems.forEach((item) => {
-              const labelText = item.textContent.split("(")[0].trim();
-              const labelIndex = labels.indexOf(labelText);
-              if (labelIndex !== -1 && !visibilityState[labelIndex]) {
-                item.classList.add("strikethrough");
-              } else {
-                item.classList.remove("strikethrough");
-              }
-            });
-          }, 100);
-
-          chart.classList.remove("fade-out");
-          chart.classList.add("fade-in");
-          setTimeout(() => {
-            chart.classList.remove("fade-in");
-          }, 500);
-        }, 600);
-
-        return false;
-      }
-
-      // Modern notification system
-      function showNotification(message, type = "info") {
-        const notification = document.createElement("div");
-        notification.className = `notification notification-${type}`;
-
-        // Select appropriate icon based on type
-        let icon = "ℹ️"; // Default info icon
-        if (type === "error") icon = "❌";
-        else if (type === "warning") icon = "⚠️";
-        else if (type === "success") icon = "✅";
-
-        notification.innerHTML = `
-        <div class="notification-content">
-          <span class="notification-icon">${icon}</span>
-          <span class="notification-message">${message}</span>
-        </div>
-      `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => notification.classList.add("show"), 100);
-        setTimeout(() => {
-          notification.classList.remove("show");
-          setTimeout(() => document.body.removeChild(notification), 300);
-        }, 4000);
-      }
-
-      // PRESERVE ORIGINAL INITIALIZATION
-      document.addEventListener("DOMContentLoaded", function () {
-        console.log("DOM content loaded, attempting chart initialization...");
-        initializePage();
-      });
-
-      window.onload = function () {
-        console.log("Window loaded, attempting chart initialization...");
-        if (!window.pageInitialized) {
-          initializePage();
-        }
-      };
-
-      function initializePage() {
-        if (window.pageInitialized) {
-          console.log("Page already initialized, skipping...");
-          return;
-        }
-
-        console.log("Page loaded, initializing...");
-        window.pageInitialized = true;
-
-        // Initialize particles
-        createParticles();
-
-        if (!chartSelector || !startDateInput || !endDateInput || !applyBtn) {
-          console.error("Required elements not found");
-          return;
-        }
-
-        if (chartSelector.value === "custom") {
-          document.getElementById("dateControls").classList.add("active");
-        } else {
-          if (chartSelector.value === "total") {
-            console.log("Loading initial total chart...");
-            // Initialize date range display for total chart
-            updateDateRangeDisplay("total");
-            setTimeout(() => {
-              loadPieChart("total");
-            }, 500);
-          }
-        }
-
-        // Add modern hover effects
-        const buttons = document.querySelectorAll(
-          ".nav-button, .apply-button, .nav-item:not([disabled])"
-        );
-        buttons.forEach((button) => {
-          button.addEventListener("mouseenter", function () {
-            if (!this.disabled) {
-              this.style.transform = "translateY(-2px) scale(1.02)";
-            }
-          });
-
-          button.addEventListener("mouseleave", function () {
-            if (!this.disabled) {
-              this.style.transform = "";
-            }
-          });
-        });
-      }
-
-      // Simple hover-based scroll control
-      document.addEventListener("DOMContentLoaded", function () {
-        let isOverLegend = false;
-
-        function disablePageScroll() {
-          document.body.style.overflow = "hidden";
-          isOverLegend = true;
-        }
-
-        function enablePageScroll() {
-          document.body.style.overflow = "";
-          isOverLegend = false;
-        }
-
-        // Function to set up legend hover detection
-        function setupLegendScrollControl() {
-          // Wait for Plotly to render
-          setTimeout(() => {
-            const plotlyDivs = document.querySelectorAll(".js-plotly-plot");
-
-            plotlyDivs.forEach((plotDiv) => {
-              // Find legend elements within this plot
-              const legends = plotDiv.querySelectorAll(
-                '.legend, .scrollbox, [class*="legend"]'
-              );
-
-              legends.forEach((legend) => {
-                legend.addEventListener("mouseenter", disablePageScroll);
-                legend.addEventListener("mouseleave", enablePageScroll);
-              });
-
-              // Also check for dynamically created legend elements
-              const observer = new MutationObserver(function (mutations) {
-                mutations.forEach(function (mutation) {
-                  if (mutation.addedNodes) {
-                    mutation.addedNodes.forEach(function (node) {
-                      if (node.nodeType === 1) {
-                        const newLegends = node.querySelectorAll(
-                          '.legend, .scrollbox, [class*="legend"]'
-                        );
-                        newLegends.forEach((legend) => {
-                          legend.addEventListener(
-                            "mouseenter",
-                            disablePageScroll
-                          );
-                          legend.addEventListener(
-                            "mouseleave",
-                            enablePageScroll
-                          );
-                        });
-                      }
-                    });
-                  }
-                });
-              });
-
-              observer.observe(plotDiv, { childList: true, subtree: true });
-            });
-          }, 1000);
-        }
-
-        // Set up when page loads
-        setupLegendScrollControl();
-
-        // Also set up when new charts are created
-        window.addEventListener("plotly_afterplot", setupLegendScrollControl);
-
-        // Fallback: re-enable scroll if mouse leaves the window entirely
-        document.addEventListener("mouseleave", function () {
-          if (isOverLegend) {
-            enablePageScroll();
-          }
-        });
-      });
-    </script>
-
-    <!-- Download Range Selection Modal -->
-    <div id="downloadModal" class="download-modal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>Download Data</h3>
-          <span class="modal-close" onclick="closeDownloadModal()"
-            >&times;</span
+          <select
+            id="chartSelector"
+            class="w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none transition focus:ring-2 focus:ring-indigo-300/50 sm:max-w-xs"
           >
-        </div>
-        <div class="modal-body">
-          <p>Select the date range for the data you want to download:</p>
-
-          <div class="date-range-section">
-            <div class="date-input-group">
-              <label for="modalStartDate">Start Date:</label>
-              <input
-                type="text"
-                id="modalStartDate"
-                class="modal-date-input custom-datepicker"
-                placeholder="Start Date"
-                readonly
-              />
-            </div>
-
-            <div class="date-input-group">
-              <label for="modalEndDate">End Date:</label>
-              <input
-                type="text"
-                id="modalEndDate"
-                class="modal-date-input custom-datepicker"
-                placeholder="End Date"
-                readonly
-              />
-            </div>
-          </div>
-
-          <div class="quick-select-section">
-            <h4>Quick Select:</h4>
-            <div class="quick-select-buttons">
-              <button class="quick-select-btn" onclick="setQuickRange('week')">
-                Last Week
-              </button>
-              <button class="quick-select-btn" onclick="setQuickRange('month')">
-                Last Month
-              </button>
-              <button
-                class="quick-select-btn"
-                onclick="setQuickRange('3months')"
-              >
-                Last 3 Months
-              </button>
-              <button class="quick-select-btn" onclick="setQuickRange('all')">
-                All Data
-              </button>
-            </div>
-          </div>
-
-          <div class="available-files-info">
-            <div id="fileCountInfo">
-              <span class="info-icon">ℹ️</span>
-              <span id="fileCountText">Calculating available files...</span>
-            </div>
-          </div>
+            <option value="total">All Time</option>
+            <option value="last_day">Last Day</option>
+            <option value="last_week">Last Week</option>
+            <option value="last_month">Last Month</option>
+            <option value="last_90_days">Last 90 Days</option>
+            <option value="last_180_days">Last 180 Days</option>
+            <option value="last_year">Last Year</option>
+            <option value="custom">Custom Date</option>
+          </select>
         </div>
 
-        <div class="modal-footer">
-          <button class="modal-btn cancel-btn" onclick="closeDownloadModal()">
-            Cancel
-          </button>
-          <button class="modal-btn download-btn" onclick="processDownload()">
-            Download Selected
+        <!-- Custom Date Controls -->
+        <div
+          id="dateControls"
+          class="flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center"
+        >
+          <input
+            type="text"
+            id="startDate"
+            class="custom-datepicker w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none transition focus:ring-2 focus:ring-indigo-300/50 sm:w-44"
+            placeholder="Start Date"
+            readonly
+          />
+
+          <input
+            type="text"
+            id="endDate"
+            class="custom-datepicker w-full rounded-xl border border-white/10 bg-slate-950/40 px-3 py-2 text-sm text-slate-100 outline-none transition focus:ring-2 focus:ring-indigo-300/50 sm:w-44"
+            placeholder="End Date"
+            readonly
+          />
+
+          <button
+            id="applyCustomRange"
+            type="button"
+            class="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300/60"
+          >
+            Apply Range
           </button>
         </div>
       </div>
-    </div>
-  </body>
-</html>
+    </section>
+  </div>
+
+  <!-- Main content -->
+  <main class="mt-6">
+    <section
+      class="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
+    >
+      <div
+        class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h2 class="text-lg font-semibold text-slate-100">
+            Team Performance Analysis
+          </h2>
+        </div>
+      </div>
+
+      <div
+        class="relative mt-6 rounded-2xl border border-white/10 bg-slate-950/30 p-3"
+      >
+        <div id="pointsPieChart" class="h-[720px] w-full"></div>
+
+        <!-- Loading overlay -->
+        <div
+          id="loadingOverlay"
+          class="absolute inset-0 hidden items-center justify-center rounded-2xl bg-black/60 backdrop-blur-sm"
+        >
+          <div class="flex flex-col items-center gap-3 text-center">
+            <div
+              class="h-10 w-10 animate-spin rounded-full border-4 border-white/20 border-t-white/80"
+            ></div>
+            <div class="text-sm font-medium text-slate-100">
+              Loading chart data...
+            </div>
+            <div class="text-xs text-slate-300">
+              Please wait while we fetch your data
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<script>
+  (() => {
+    Chart.register(ChartDataLabels);
+
+    const el = {
+      container: document.getElementById("pointsPieChart"),
+      selector: document.getElementById("chartSelector"),
+      dateControls: document.getElementById("dateControls"),
+      startDate: document.getElementById("startDate"),
+      endDate: document.getElementById("endDate"),
+      applyBtn: document.getElementById("applyCustomRange"),
+      overlay: document.getElementById("loadingOverlay"),
+    };
+
+    const canvas = document.createElement("canvas");
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    el.container.innerHTML = "";
+    el.container.appendChild(canvas);
+
+    // Center text plugin
+    const centerTextPlugin = {
+      id: "centerText",
+      afterDraw(chart, args, opts) {
+        if (!opts?.line1 && !opts?.line2) return;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta?.data?.length) return;
+
+        const { ctx } = chart;
+        const x = meta.data[0].x;
+        const y = meta.data[0].y;
+
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.font = "600 14px Inter, Arial, sans-serif";
+        ctx.fillStyle = "rgba(226,232,240,0.95)";
+        ctx.fillText(opts.line1 || "", x, y - 10);
+
+        ctx.font = "700 22px Inter, Arial, sans-serif";
+        ctx.fillStyle = "rgba(224,97,80,0.95)";
+        ctx.fillText(opts.line2 || "", x, y + 18);
+
+        ctx.restore();
+      },
+    };
+    Chart.register(centerTextPlugin);
+
+    let chart = null;
+
+    function showLoading(on) {
+      if (!el.overlay) return;
+      el.overlay.classList.toggle("hidden", !on);
+      el.overlay.classList.toggle("flex", on);
+    }
+
+    function setCustomControlsVisible(on) {
+      if (!el.dateControls) return;
+      el.dateControls.classList.toggle("hidden", !on);
+    }
+
+    function colorForIndex(i) {
+      const hue = (i * 47) % 360;
+      return `hsl(${hue} 70% 55%)`;
+    }
+
+    function normalize(resp) {
+      if (!resp || resp.error) throw new Error(resp?.error || "Bad response.");
+
+      const labels = Array.isArray(resp.labels) ? resp.labels : [];
+      const values = Array.isArray(resp.values) ? resp.values : [];
+      if (!labels.length || labels.length !== values.length)
+        throw new Error("labels/values mismatch.");
+
+      const colors =
+        Array.isArray(resp.colors) && resp.colors.length === values.length
+          ? resp.colors
+          : values.map((_, i) => colorForIndex(i));
+
+      const hole = resp.meta?.hole ?? 0.6;
+      const cutout = `${Math.round(Number(hole) * 100)}%`;
+
+      const total = resp.meta?.total ?? values.reduce((a, b) => a + b, 0);
+      const active =
+        resp.meta?.active_members ?? values.filter((v) => v > 0).length;
+
+      return { labels, values, colors, cutout, total, active };
+    }
+
+    function renderOrUpdate(ds) {
+      const cfg = {
+        type: "doughnut",
+        data: {
+          labels: ds.labels,
+          datasets: [
+            {
+              data: ds.values,
+              backgroundColor: ds.colors,
+              borderColor: "rgba(255,255,255,0.20)",
+              borderWidth: 1,
+              hoverOffset: 8,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: ds.cutout,
+          plugins: {
+            legend: {
+              position: "right",
+              labels: {
+                color: "rgba(226,232,240,0.95)",
+                boxWidth: 14,
+                boxHeight: 14,
+                padding: 12,
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.parsed;
+                  const pct = ds.total ? (v / ds.total) * 100 : 0;
+                  return ` ${ctx.label}: ${Number(v).toLocaleString()} (${pct.toFixed(1)}%)`;
+                },
+              },
+            },
+            datalabels: {
+              color: "rgba(255,255,255,0.92)",
+              font: { weight: "600", size: 11 },
+              formatter: (value) => {
+                const pct = ds.total ? (value / ds.total) * 100 : 0;
+                if (pct < 2.5) return "";
+                return `${pct.toFixed(0)}%`;
+              },
+            },
+            centerText: {
+              line1: "Total Points",
+              line2: Number(ds.total).toLocaleString(),
+            },
+          },
+        },
+      };
+
+      if (chart) {
+        chart.data = cfg.data;
+        chart.options = cfg.options;
+        chart.update();
+      } else {
+        chart = new Chart(canvas.getContext("2d"), cfg);
+      }
+    }
+
+    function showError(message) {
+      el.container.innerHTML = `
+      <div class="flex h-full min-h-[240px] items-center justify-center text-center">
+        <div class="max-w-lg px-4">
+          <div class="text-sm font-semibold text-slate-100">Chart error</div>
+          <div class="mt-2 text-sm text-slate-300">${message}</div>
+        </div>
+      </div>
+    `;
+    }
+
+    async function fetchRange(type, startISO, endISO) {
+      const params = new URLSearchParams({ type });
+      if (type === "custom" && startISO && endISO) {
+        params.set("start", startISO);
+        params.set("end", endISO);
+      }
+      const res = await fetch(`/get_chart_data?${params.toString()}`, {
+        headers: { Accept: "application/json" },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.error || "Failed to load chart data.");
+      return json;
+    }
+
+    async function loadAndRender(type, startISO, endISO) {
+      showLoading(true);
+      try {
+        if (!el.container.contains(canvas)) {
+          el.container.innerHTML = "";
+          el.container.appendChild(canvas);
+        }
+        const resp = await fetchRange(type, startISO, endISO);
+        const ds = normalize(resp);
+        renderOrUpdate(ds);
+      } catch (e) {
+        console.error(e);
+        showError(e.message || "Unknown error");
+      } finally {
+        showLoading(false);
+      }
+    }
+
+    $(".custom-datepicker").datepicker({
+      dateFormat: "yy-mm-dd",
+      changeMonth: true,
+      changeYear: true,
+      maxDate: 0,
+    });
+
+    setCustomControlsVisible(el.selector.value === "custom");
+
+    el.selector.addEventListener("change", () => {
+      const type = el.selector.value;
+      const isCustom = type === "custom";
+      setCustomControlsVisible(isCustom);
+      if (!isCustom) loadAndRender(type);
+    });
+
+    el.applyBtn.addEventListener("click", () => {
+      const start = el.startDate.value;
+      const end = el.endDate.value;
+      if (!start || !end)
+        return showError("Pick both a start date and an end date.");
+      if (start > end) return showError("Start date must be before end date.");
+      loadAndRender("custom", start, end);
+    });
+
+    loadAndRender(el.selector.value || "total");
+  })();
+</script>
+
+{% endblock %}
