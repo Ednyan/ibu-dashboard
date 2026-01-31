@@ -33,6 +33,8 @@
       >
         Members
       </a>
+      <div class="flex">{{ extra_nav_buttons_desktop }}</div>
+      <div class="border border-white/15 mr-2"></div>
       <a
         href="https://discord.com/invite/2S2WZMznVJ"
         class="rounded-lg p-2 hover:bg-white/10 transition-all duration-150 ease-out inline-flex items-center justify-center"
@@ -45,7 +47,18 @@
           class="h-6 w-6"
         />
       </a>
-      <div class="flex">{{ extra_nav_buttons_desktop }}</div>
+      <a
+        href="https://github.com/Ednyan/ibu-dashboard/"
+        class="rounded-lg p-2 hover:bg-white/10 transition-all duration-150 ease-out inline-flex items-center justify-center"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          src="{{ url_for('static', filename='git-icon.svg') }}"
+          alt="Git"
+          class="h-6 w-6"
+        />
+      </a>
     </nav>
     <nav class="sm:hidden inline-flex items-center justify-center gap-2">
       <div class="flex">{{ extra_nav_buttons_mobile }}</div>
@@ -91,6 +104,8 @@
         class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
         >Members</a
       >
+      <div class="flex">{{ extra_nav_buttons_mobile_hamburger }}</div>
+      <div class="border border-white/15"></div>
       <a
         href="https://discord.com/invite/2S2WZMznVJ"
         target="_blank"
@@ -101,7 +116,18 @@
           alt="Discord"
           class="h-6 w-6"
       /></a>
-      <div class="flex">{{ extra_nav_buttons_mobile_hamburger }}</div>
+      <a
+        href="https://github.com/Ednyan/ibu-dashboard/"
+        class="rounded-lg px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          src="{{ url_for('static', filename='git-icon.svg') }}"
+          alt="Git"
+          class="h-6 w-6"
+        />
+      </a>
     </div>
   </nav>
 </header>
