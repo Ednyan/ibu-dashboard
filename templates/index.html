@@ -112,7 +112,7 @@ extra_nav_buttons_mobile %}
           {% if stats.active_members_gain is defined %} {% set g =
           stats.active_members_gain %}
           <span
-            class="text-xs font-semibold {% if g > 0 %}text-green-400 {% elif g < 0 %}text-red-400 {% else %}text-white/40 {% endif %}"
+            class="px-2 py-0.5 rounded-full text-[0.7rem] font-semibold {% if g > 0 %} bg-green-500/15 text-green-300 {% elif g < 0 %} bg-red-500/15 text-red-300 {% else %} bg-white/5 text-white/40 {% endif %}"
           >
             {% if g > 0 %}+{% endif %}{{ g }}
           </span>
