@@ -2290,6 +2290,11 @@ def get_member_probation_status():
 
 
 @app.route("/member_info")
+def old_path():
+    return redirect(url_for("member_info"), code=301)
+
+
+@app.route("/members")
 def member_info():
     """Member info page with probation tracking"""
     try:
@@ -2310,7 +2315,7 @@ def member_info():
         members = probation_data.get("members", []) if probation_data else []
 
         return render_template(
-            "member-info.html",
+            "members.html",
             latest_date=latest_date,
             time_ago=time_ago,
             members=members,
@@ -2319,7 +2324,7 @@ def member_info():
     except Exception as e:
         print(f"Error in member_info route: {str(e)}")
         return render_template(
-            "member-info.html",
+            "members.html",
             latest_date="Error",
             time_ago="Error",
             members=[],

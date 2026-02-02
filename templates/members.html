@@ -8,9 +8,7 @@ block content %}
       class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
     >
       <div>
-        <h1 class="text-xl font-semibold tracking-wide text-white">
-          MEMBER TRACKING
-        </h1>
+        <h1 class="text-xl font-semibold tracking-wide text-white">Members</h1>
         <p class="mt-1 text-sm text-white/70">
           Data from {{ time_ago }} ({{ latest_date }})
         </p>
@@ -63,8 +61,6 @@ block content %}
                   <a
                     class="shrink-0 rounded-4xl py-1 px-2 hover:bg-white/10"
                     href="/member/{{ m.name|urlencode }}"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     title="Profile"
                   >
                     {{ m.name }}
