@@ -2289,6 +2289,11 @@ def get_member_probation_status():
         return {"error": str(e)}
 
 
+@app.route("/member/<member>")
+def member(member):
+    return render_template("member.html")
+
+
 @app.route("/member_info")
 def old_path():
     return redirect(url_for("member_info"), code=301)
