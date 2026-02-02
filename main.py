@@ -27,7 +27,7 @@ import logging
 import time
 from dotenv import load_dotenv
 from werkzeug.exceptions import HTTPException
-
+import minify_html
 
 # Rust imports
 from rustlibs import get_csv_files_from_folder
@@ -712,6 +712,31 @@ def get_custom_text(values, labels):
 
 
 app = Flask(__name__)  # . .venv/bin/activate
+
+
+@app.after_request
+def minify_html_response(response):
+    ct = response.headers.get("Content-Type", "")
+    if not ct.startswith("text/html") or response.direct_passthrough:
+        return response
+
+    response.set_data(
+        minify_html.minify(
+            response.get_data(as_text=True),
+            minify_js=True,
+            minify_css=True,
+            remove_processing_instructions=True,
+            remove_bangs=True,
+            keep_comments=False,
+            keep_ssi_comments=False,
+            allow_noncompliant_unquoted_attribute_values=True,
+            allow_optimal_entities=True,
+            allow_removing_spaces_between_attributes=True,
+        )
+    )
+
+    response.headers["Content-Length"] = str(len(response.get_data()))
+    return response
 
 
 # Handle http errors (400s)
