@@ -2293,7 +2293,6 @@ def get_member_probation_status():
 def member_info():
     """Member info page with probation tracking"""
     try:
-        # Get the latest file info for the header
         file_path, date_str, file_timestamp = get_latest_csv_file()
 
         if file_path:
@@ -2307,14 +2306,24 @@ def member_info():
             latest_date = "No data"
             time_ago = "Unknown"
 
+        probation_data = check_probation_cache()
+        members = probation_data.get("members", []) if probation_data else []
+
         return render_template(
-            "member-info.html", latest_date=latest_date, time_ago=time_ago
+            "member-info.html",
+            latest_date=latest_date,
+            time_ago=time_ago,
+            members=members,
         )
 
     except Exception as e:
         print(f"Error in member_info route: {str(e)}")
         return render_template(
-            "member-info.html", latest_date="Error", time_ago="Error"
+            "member-info.html",
+            latest_date="Error",
+            time_ago="Error",
+            members=[],
+            error=str(e),
         )
 
 

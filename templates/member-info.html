@@ -1,524 +1,211 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>I.B.U. MEMBER INFO</title>
-  
-  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='ibu-icon.svg') }}">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='graphs-modern.css') }}">
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='member-info.css') }}">
+{% extends "base.html" %} {% block title %}I.B.U. MEMBER INFO{% endblock %} {%
+block content %}
 
-</head>
-<body>
-  <!-- Particles background -->
-  <div class="particles-container" id="particles"></div>
-  
-  <!-- Background gradient overlay -->
-  <div class="background-overlay"></div>
-
-  <!-- Main container -->
-  <div class="main-container">
-    <!-- Header section -->
-    <header class="header-section">
-      <div class="header-content">
-        <div class="title-section">
-          <h1 class="main-title animate-slide-up">MEMBER TRACKING</h1>
-          <p class="subtitle animate-slide-up" style="animation-delay: 0.2s;">
-            New data received {{ time_ago }} ({{ latest_date }})
-          </p>
-        </div>
-        <a class="nav-button animate-slide-up" style="animation-delay: 0.4s; text-decoration: none;" href="{{ url_for('index') }}"">
-          <span>Main Page</span>
-        </a>
-      </div>
-    </header>
-
-    <!-- Horizontal Navigation -->
-    <nav class="horizontal-nav animate-slide-up" style="animation-delay: 0.4s;">
-      <a href="{{ url_for('visualization') }}" class="nav-tab">
-        <span class="nav-icon">📊</span>
-        <span>Points Data</span>
-      </a>
-      <a href="{{ url_for('trends') }}" class="nav-tab">
-        <span class="nav-icon">📈</span>
-        <span>Trends</span>
-      </a>
-      <a href="{{ url_for('member_info') }}" class="nav-tab active">
-        <span class="nav-icon">👥</span>
-        <span>Member Tracking</span>
-      </a>
-    </nav>
-
-    <!-- Stats Summary -->
-    <div id="statsSummary" class="stats-summary animate-slide-up" style="animation-delay: 0.6s; display: none;">
-      <!-- Will be populated by JavaScript -->
-    </div>
-
-    <!-- Member Search -->
-    <div id="searchBarContainer" class="searchbar-container animate-slide-up" style="animation-delay: 0.7s; display: none; margin: 8px 0 0;">
-      <div class="searchbar-wrap">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M15.5 15.5L20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
-        </svg>
-        <input id="memberSearch" class="searchbar-input" type="text" placeholder="Search members by name..." />
+<div class="mx-auto w-full max-w-6xl px-4 py-6">
+  <!-- Header -->
+  <header class="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm">
+    <div
+      class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <h1 class="text-xl font-semibold tracking-wide text-white">
+          MEMBER TRACKING
+        </h1>
+        <p class="mt-1 text-sm text-white/70">
+          Data from {{ time_ago }} ({{ latest_date }})
+        </p>
       </div>
     </div>
+  </header>
 
-    <!-- Loading State -->
-    <div id="loadingState" class="animate-slide-up" style="animation-delay: 0.8s;">
-      <div class="loading-spinner-member"></div>
-      <p style="text-align: center; color: #fff; margin-top: 20px;">Loading member probation data...</p>
-    </div>
-
-    <!-- Error State -->
-    <div id="errorState" class="error-message" style="display: none;">
-      <h3>Error Loading Data</h3>
-      <p id="errorMessage">Unable to load member probation data. Please try refreshing the page.</p>
-    </div>
-
-    <!-- Members Container -->
-    <div id="membersContainer" class="members-container" style="display: none;">
-      <!-- Will be populated by JavaScript -->
-    </div>
+  <!-- Search -->
+  <div class="mt-4">
+    <input
+      id="memberSearch"
+      type="text"
+      placeholder="Search members by name..."
+      class="w-full rounded-xl border border-white/10 bg-white/5 py-3 px-4 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
+    />
   </div>
 
-  <!-- Scripts -->
-  <script>
-  // Static asset URLs available to JS
-  const SHEEPIT_ICON_URL = "{{ url_for('static', filename='sheepit-logo.svg') }}";
-    // Basic HTML escaping to safely insert dynamic text in attributes/HTML
-  function escapeHtml(s) {
-      if (s === undefined || s === null) return '';
-      return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-    // Particle system (same as other pages)
-    function createParticles() {
-      const container = document.getElementById('particles');
-      const particleCount = 20;
+  <!-- List -->
+  <div
+    class="mt-4 overflow-hidden rounded-xl backdrop-blur-2xl border border-white/10 bg-white/5"
+  >
+    <!-- Header row -->
+    <div
+      class="hidden grid-cols-12 gap-3 border-b border-white/10 px-4 py-3 text-xs font-semibold text-white/60 sm:grid"
+    >
+      <div class="col-span-3">Member</div>
+      <div class="col-span-1">Days</div>
+      <div class="col-span-2">Points</div>
+      <div class="col-span-2">Status</div>
+      <div class="col-span-4">Milestones</div>
+    </div>
 
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        
-        const size = Math.random() * 6 + 2;
-        particle.style.width = size + 'px';
-        particle.style.height = size + 'px';
-        
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        
-        particle.style.animationDelay = Math.random() * 8 + 's';
-        particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
-        
-        container.appendChild(particle);
-      }
-    }
+    <ul id="membersList" class="divide-y divide-x divide-white/10">
+      {% for m in members %} {% set ps = m.probation_status %} {% set w =
+      m.milestones.week_1 %} {% set m1 = m.milestones.month_1 %} {% set m3 =
+      m.milestones.month_3 %}
 
-    // Format numbers with commas
-    function formatNumber(num) {
-      return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-
-    // Calculate progress percentage
-    function calculateProgress(current, target) {
-      return Math.min(100, (current / target) * 100);
-    }
-
-    // Create member card HTML
-  function createMemberCard(member) {
-      const statusClasses = {
-        'completed': 'status-completed',
-        'passed': 'status-passed',
-        'failed': 'status-failed',
-        'in_progress': 'status-in_progress'
-      };
-
-      const statusLabels = {
-        'completed': 'Completed',
-        'passed': 'Passed Probation',
-        'failed': 'Failed',
-        'in_progress': 'In Progress'
-      };
-
-      // Create milestones HTML in the requested order: Week, First Month, Three Months
-      let milestonesHtml = '';
-      
-      // Define milestone order
-      const milestoneOrder = [
-        { key: 'week_1', title: 'First Week' },
-        { key: 'month_1', title: 'First Month' },
-        { key: 'month_3', title: 'Three Months' }
-      ];
-      
-  milestoneOrder.forEach(({ key, title }) => {
-        const milestone = member.milestones[key];
-        let milestoneClass = 'pending';
-        let statusText = 'In Progress';
-        let progressPercent = 0;
-        
-        // Enhanced logic: if remaining points is 0, mark as passed
-        if (milestone.passed === true && milestone.remaining_points === 0) {
-          milestoneClass = 'passed';
-          statusText = 'Passed';
-          progressPercent = 100;
-        } else if (milestone.passed === false) {
-          milestoneClass = 'failed';
-          statusText = 'Failed';
-          progressPercent = calculateProgress(milestone.points_at_deadline || member.current_points, milestone.target);
-        } else {
-          progressPercent = calculateProgress(member.current_points, milestone.target);
-        }
-
-        const targetFormatted = formatNumber(milestone.target);
-        const actualPoints = milestone.points_at_deadline || member.current_points;
-        // Cap the displayed points at the milestone target
-        const cappedPoints = Math.min(actualPoints, milestone.target);
-        const pointsFormatted = formatNumber(cappedPoints);
-
-        let detailsText = '';
-          if (milestone.passed === true) {
-            detailsText = `✅ Target achieved! ${pointsFormatted} / ${targetFormatted} points`;
-          } else if (milestone.passed === false) {
-            detailsText = `❌ Target not met. ${pointsFormatted} / ${targetFormatted} points`;
-          } else if (milestone.passed === null && milestone.days_left > 0) {
-            detailsText = `${formatNumber(milestone.remaining_points)} points needed in ${milestone.days_left} days`;
-          } else if (milestone.passed === null && milestone.days_left === 0) {
-            detailsText = `Deadline today - ${formatNumber(milestone.remaining_points)} points needed`;
-          } else {
-            detailsText = `${pointsFormatted} / ${targetFormatted} points`;
-          }
-
-        let overrideBadge = '';
-        if (member.overrides && (key in member.overrides)) {
-          if (member.overrides[key] === true) {
-            overrideBadge = `<span class="override-badge" title="Admin override: forced pass">😇 Forgiven</span>`;
-          } else if (member.overrides[key] === false) {
-            overrideBadge = `<span class="override-badge" title="Admin override: forced fail">👿 Denied</span>`;
-          }
-        }
-
-        milestonesHtml += `
-          <div class="milestone ${milestoneClass}">
-            <div class="milestone-title">${title} - ${statusText} ${overrideBadge}</div>
-            <div class="milestone-details">${detailsText}</div>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: ${progressPercent}%"></div>
-            </div>
-          </div>
-        `;
-      });
-
-  // All cards use the same base appearance - no special card classes for status
-  let cardClass = 'member-card';
-
-  // Build SheepIt profile URL (encode username safely) and escaped display name
-  const profileUrl = `https://www.sheepit-renderfarm.com/user/${encodeURIComponent(member.name)}/profile`;
-  const displayName = escapeHtml(member.name || '');
-      
-  // Add data attributes for filtering
-  const dataName = (member.name || '').toLowerCase().replace(/"/g, '&quot;');
-  let dataAttributes = `data-probation-status="${member.probation_status}" data-name="${dataName}"`;
-      if (member.post_probation_status) {
-        dataAttributes += ` data-post-probation-status="${member.post_probation_status}"`;
-      }
-
-      // Create post-probation section HTML
-      let postProbationHtml = '';
-      if (member.probation_status === 'passed' && member.post_probation_status) {
-        const postStatusLabels = {
-          'compliant': 'Compliant',
-          'non_compliant': 'Non-Compliant',
-          'insufficient_data': 'Insufficient Data',
-          'too_early': 'Too Early to Evaluate',
-          'on_track': 'On Track',
-          'at_risk': 'At Risk',
-          'in_progress': 'In Progress'
-        };
-
-        const postStatusClasses = {
-          'compliant': 'status-passed',
-          'non_compliant': 'status-non_compliant',
-          'insufficient_data': 'status-insufficient_data',
-          'too_early': 'status-in_progress',
-          'on_track': 'status-on_track',
-          'at_risk': 'status-at_risk',
-          'in_progress': 'status-in_progress'
-        };
-
-        let periodsHtml = '';
-        if (member.post_probation_periods && member.post_probation_periods.length > 0) {
-          // Show only up to 3 most recent periods (they're already limited by backend)
-          const periodsToShow = member.post_probation_periods.slice(-3);
-          
-          periodsToShow.forEach(period => {
-            // Simplified status text - just show basic status
-            const statusText = period.status === 'compliant' ? 'Compliant ✅' : 
-                              period.status === 'non_compliant' ? 'Non-Compliant ❌' : 
-                              period.status === 'insufficient_data' ? 'Insufficient Data ⚠️' :
-                              'In Progress 📈'; // Covers on_track, at_risk, just_started
-            
-            let pointsText;
-            let currentPeriodInfo = '';
-            
-            // Show point numbers when available, otherwise show status
-            if (period.status === 'insufficient_data') {
-              pointsText = 'Insufficient Data';
-            } else if (period.points_earned !== null && period.points_earned !== undefined) {
-              pointsText = `${formatNumber(period.points_earned)} / ${formatNumber(period.target_points)} points earned`;
-            } else if (period.status === 'compliant') {
-              pointsText = 'Compliant';
-            } else if (period.status === 'non_compliant') {
-              pointsText = 'Non-Compliant';
-            } else {
-              pointsText = 'In Progress';
-            }
-            
-            // Simplified current period tracking info - only days elapsed and progress
-            if (period.is_current_period && period.days_elapsed !== undefined) {
-              const progress = period.points_earned / period.target_points * 100;
-              currentPeriodInfo = `
-                <div class="current-period-info">
-                  <div><span class="label">Days Elapsed:</span> ${period.days_elapsed} / 90</div>
-                  <div><span class="label">Current Progress:</span> ${progress.toFixed(1)}%</div>
+      <li
+        class="member-row px-4 py-3 hover:bg-white/5"
+        data-name="{{ m.name | lower }}"
+      >
+        <div
+          class="grid grid-cols-1 gap-2 sm:grid-cols-12 sm:items-center sm:gap-3"
+        >
+          <!-- Member -->
+          <div class="sm:col-span-3">
+            <div class="flex items-center gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold text-white mb-1">
+                  <a
+                    class="shrink-0 rounded-4xl py-1 px-2 hover:bg-white/10"
+                    href="/member/{{ m.name|urlencode }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Profile"
+                  >
+                    {{ m.name }}
+                  </a>
                 </div>
-              `;
-            }
-
-            const periodTitle = period.is_current_period ? 
-              `<strong>Current Period ${period.period_number}</strong> (${period.start_date} to ${period.end_date})` :
-              `<strong>Period ${period.period_number}</strong> (${period.start_date} to ${period.end_date})`;
-
-            periodsHtml += `
-              <div class="post-probation-period ${period.status}">
-                ${periodTitle}<br>
-                <strong>Status:</strong> ${statusText}<br>
-                <strong>Performance:</strong> ${pointsText}
-                ${currentPeriodInfo}
+                <div class="px-2 text-xs text-white/50">
+                  Joined {{ m.joined_date }}
+                </div>
               </div>
-            `;
-          });
-        }
-
-        let statusMessage = '';
-        if (member.post_probation_status === 'too_early') {
-          statusMessage = 'Member recently completed probation. Post-probation evaluation will begin after 90 days.';
-        } else if (member.post_probation_status === 'insufficient_data') {
-          statusMessage = 'Not enough data available to properly evaluate post-probation performance. More historical data needed.';
-        } else if (member.post_probation_status === 'non_compliant') {
-          statusMessage = 'Member is not consistently meeting the post-probation requirement of 3M points per 90-day period.';
-        } else if (member.post_probation_status === 'on_track') {
-          statusMessage = 'Member is currently on track to meet the post-probation requirement of 3M points per 90-day period.';
-        } else if (member.post_probation_status === 'at_risk') {
-          statusMessage = 'Member is at risk of not meeting the post-probation requirement. Current pace is below the target rate.';
-        } else if (member.post_probation_status === 'in_progress') {
-          statusMessage = 'Member is currently in their first post-probation period. Performance is being tracked.';
-        } else {
-          statusMessage = 'Member is successfully meeting post-probation requirements (3M points per 90-day period).';
-        }
-
-        postProbationHtml = `
-          <div class="post-probation-section">
-            <div class="post-probation-title">Post-Probation Performance</div>
-            <div class="post-probation-status ${postStatusClasses[member.post_probation_status]}">
-              ${postStatusLabels[member.post_probation_status]}
             </div>
-            <div style="color: #e0e0e0; font-size: 0.85em; margin-bottom: 10px;">
-              ${statusMessage}
+          </div>
+
+          <!-- Days -->
+          <div class="sm:col-span-1 sm:text-left">
+            <div class="text-xs text-white/50 sm:hidden">Days</div>
+            <div class="text-sm text-white">{{ m.days_since_joined }}</div>
+          </div>
+
+          <!-- Points -->
+          <div class="sm:col-span-2 sm:text-left">
+            <div class="text-xs text-white/50 sm:hidden">Points</div>
+            <div class="text-sm text-white">
+              {{ "{:,}".format(m.current_points) }}
             </div>
-            ${periodsHtml ? `<div class="post-probation-periods">${periodsHtml}</div>` : ''}
           </div>
-        `;
-      }
 
-  return `
-        <div class="member-card ${cardClass}" ${dataAttributes}>
-          <div class="member-header">
-            <div class="member-title">
-              <div class="member-name">${displayName}</div>
-              <a class="sheepit-link" href="${profileUrl}" target="_blank" rel="noopener noreferrer" title="Open SheepIt profile for ${displayName}">
-                <img class="sheepit-icon" src="${SHEEPIT_ICON_URL}" alt="SheepIt" />
-              </a>
+          <!-- Status -->
+          <div class="sm:col-span-2">
+            <div class="text-xs text-white/50 sm:hidden">Status</div>
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ps in ['passed','completed'] %} bg-green-500/15 text-green-300 {% elif ps == 'failed' %} border-rose-400/25 bg-rose-400/15 text-rose-100 {% else %} border-amber-400/25 bg-amber-400/15 text-amber-100 {% endif %}"
+            >
+              {% if ps == 'in_progress' %}In Progress {% elif ps == 'passed'
+              %}Passed {% elif ps == 'completed' %}Completed {% elif ps ==
+              'failed' %}Failed {% else %}{{ ps }}{% endif %}
+            </span>
+
+            {% if ps == 'passed' and m.post_probation_status %}
+            <span
+              class="ml-2 inline-flex items-center rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] text-white/80"
+            >
+              N/A
+            </span>
+            {% endif %}
+          </div>
+
+          <!-- Milestones -->
+          <div class="sm:col-span-4">
+            <div class="text-xs text-white/50 sm:hidden">Milestones</div>
+
+            <div class="grid grid-cols-3 gap-2">
+              {% macro milestone_cell(label, ms) %}
+              <div class="relative group">
+                <!-- Pill -->
+                <div
+                  class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ms.passed is sameas(true) %}bg-green-500/15 {% elif ms.passed is sameas(false) %}bg-red-500/15 {% else %}bg-amber-200/15{% endif %}"
+                >
+                  <div
+                    class="text-[11px] font-semibold {% if ms.passed is sameas(true) %}text-green-300 {% elif ms.passed is sameas(false) %}text-rose-200 {% else %}text-amber-200{% endif %}"
+                  >
+                    {{ label }}
+                  </div>
+                </div>
+                <!-- More detailed overview -->
+                <div
+                  class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-56 opacity-0 transition duration-150 ease-out group-hover:opacity-100"
+                >
+                  <div
+                    class="rounded-xl border border-white/15 bg-gray-950/80 p-3 shadow-xl backdrop-blur"
+                  >
+                    <div class="flex items-center justify-between">
+                      <div class="text-xs font-semibold text-white">
+                        {{ label }}
+                      </div>
+                      <div
+                        class="text-[11px] {% if ms.passed is sameas(true) %}text-green-300 {% elif ms.passed is sameas(false) %}text-rose-200 {% else %}text-amber-200{% endif %}"
+                      >
+                        {% if ms.passed is sameas(true) %}Passed {% elif
+                        ms.passed is sameas(false) %}Failed {% else %}Pending{%
+                        endif %}
+                      </div>
+                    </div>
+
+                    <div class="mt-1 text-[11px] text-white/80">
+                      Points at deadline:
+                      <span class="text-white">
+                        {{ "{:,}".format((ms.points_at_deadline if
+                        ms.points_at_deadline is not none else
+                        m.current_points)) }}
+                      </span>
+                    </div>
+
+                    <div class="mt-2 text-[11px] text-white/80">
+                      Target:
+                      <span class="text-white"
+                        >{{ "{:,}".format(ms.target) }}</span
+                      >
+                    </div>
+
+                    {% if ms.passed is none and ms.days_left is not none %}
+                    <div
+                      class="mt-2 rounded-lg border border-white/10 bg-white/5 px-2 py-2"
+                    >
+                      <div class="text-[11px] text-white/70">
+                        {% if ms.days_left > 0 %} {{
+                        "{:,}".format(ms.remaining_points) }} needed in {{
+                        ms.days_left }} day{{ 's' if ms.days_left != 1 else ''
+                        }} {% elif ms.days_left == 0 %} Due today: {{
+                        "{:,}".format(ms.remaining_points) }} {% endif %}
+                      </div>
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endmacro %} {{ milestone_cell('Week', w) }} {{
+              milestone_cell('Month 1', m1) }} {{ milestone_cell('Month 3', m3)
+              }}
             </div>
-            <div class="status-badge ${statusClasses[member.probation_status]}">${statusLabels[member.probation_status]}</div>
           </div>
-          <div class="member-details">
-            <div>Joined: ${member.joined_date}</div>
-            <div>Days since joining: ${member.days_since_joined}</div>
-            <div>Current points: ${formatNumber(member.current_points)}</div>
-          </div>
-          <div class="milestones">
-            ${milestonesHtml}
-          </div>
-          ${postProbationHtml}
         </div>
-      `;
-    }
+      </li>
+      {% endfor %} {% if members|length == 0 %}
+      <li class="px-4 py-10 text-center text-sm text-white/70">
+        No member data available.
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</div>
 
-    // Create stats summary HTML
-    function createStatsSummary(members) {
-      const stats = {
-        total: members.length,
-        completed: members.filter(m => m.probation_status === 'completed' || m.probation_status === 'passed').length,
-        in_progress: members.filter(m => m.probation_status === 'in_progress').length,
-        failed: members.filter(m => m.probation_status === 'failed').length,
-        post_compliant: members.filter(m => m.probation_status === 'passed' && m.post_probation_status === 'compliant').length,
-        post_non_compliant: members.filter(m => m.probation_status === 'passed' && m.post_probation_status === 'non_compliant').length
-      };
-
-      return `
-        <div class="stat-item" onclick="filterMembers('all')" data-filter="all">
-          <div class="stat-number">${stats.total}</div>
-          <div class="stat-label">Total Members</div>
-        </div>
-        <div class="stat-item" onclick="filterMembers('completed')" data-filter="completed">
-          <div class="stat-number" style="color: #4CAF50;">${stats.completed}</div>
-          <div class="stat-label">Completed Probation</div>
-        </div>
-        <div class="stat-item" onclick="filterMembers('in_progress')" data-filter="in_progress">
-          <div class="stat-number" style="color: #FF9800;">${stats.in_progress}</div>
-          <div class="stat-label">In Progress</div>
-        </div>
-        <div class="stat-item" onclick="filterMembers('failed')" data-filter="failed">
-          <div class="stat-number" style="color: #f44336;">${stats.failed}</div>
-          <div class="stat-label">Failed Probation</div>
-        </div>
-        <div class="stat-item" onclick="filterMembers('post_compliant')" data-filter="post_compliant">
-          <div class="stat-number" style="color: #4CAF50;">${stats.post_compliant}</div>
-          <div class="stat-label">Post-Probation Compliant</div>
-        </div>
-        <div class="stat-item" onclick="filterMembers('post_non_compliant')" data-filter="post_non_compliant">
-          <div class="stat-number" style="color: #9C27B0;">${stats.post_non_compliant}</div>
-          <div class="stat-label">Post-Probation Non-Compliant</div>
-        </div>
-      `;
-    }
-
-    // Filter members based on category
-    function filterMembers(filterType) {
-      const memberCards = document.querySelectorAll('.member-card');
-      const statItems = document.querySelectorAll('.stat-item');
-      const qEl = document.getElementById('memberSearch');
-      const q = (qEl && qEl.value) ? qEl.value.toLowerCase().trim() : '';
-      
-      // Remove active class from all stat items
-      statItems.forEach(item => item.classList.remove('active'));
-      
-      // Add active class to clicked stat item
-      const activeItem = document.querySelector(`[data-filter="${filterType}"]`);
-      if (activeItem) {
-        activeItem.classList.add('active');
-      }
-      
-      // Show/hide member cards based on filter
-      memberCards.forEach(card => {
-        const probationStatus = card.getAttribute('data-probation-status');
-        const postProbationStatus = card.getAttribute('data-post-probation-status');
-        const nameAttr = (card.getAttribute('data-name') || '').toLowerCase();
-        let shouldShow = false;
-        
-        switch(filterType) {
-          case 'all':
-            shouldShow = true;
-            break;
-          case 'completed':
-            shouldShow = probationStatus === 'completed' || probationStatus === 'passed';
-            break;
-          case 'in_progress':
-            shouldShow = probationStatus === 'in_progress';
-            break;
-          case 'failed':
-            shouldShow = probationStatus === 'failed';
-            break;
-          case 'post_compliant':
-            shouldShow = probationStatus === 'passed' && postProbationStatus === 'compliant';
-            break;
-          case 'post_non_compliant':
-            shouldShow = probationStatus === 'passed' && postProbationStatus === 'non_compliant';
-            break;
-        }
-        // Apply name filter
-        if (q) {
-          shouldShow = shouldShow && nameAttr.includes(q);
-        }
-
-        if (shouldShow) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
-      });
-    }
-
-    // Load probation data
-    function loadProbationData() {
-      fetch('/get_probation_data')
-        .then(response => response.json())
-        .then(data => {
-          const loadingState = document.getElementById('loadingState');
-          const errorState = document.getElementById('errorState');
-          const membersContainer = document.getElementById('membersContainer');
-          const statsSummary = document.getElementById('statsSummary');
-
-          if (data.error) {
-            loadingState.style.display = 'none';
-            errorState.style.display = 'block';
-            document.getElementById('errorMessage').textContent = data.error;
-            return;
-          }
-
-          // Hide loading, show content
-          loadingState.style.display = 'none';
-          membersContainer.style.display = 'grid';
-          statsSummary.style.display = 'grid';
-          const searchBar = document.getElementById('searchBarContainer');
-          if (searchBar) searchBar.style.display = 'block';
-
-          // Populate stats summary
-          statsSummary.innerHTML = createStatsSummary(data.members);
-
-          // Populate member cards
-          const memberCardsHtml = data.members.map(member => createMemberCard(member)).join('');
-          membersContainer.innerHTML = memberCardsHtml;
-
-          // Wire up search input
-          const searchInput = document.getElementById('memberSearch');
-          if (searchInput) {
-            let t = null;
-            searchInput.addEventListener('input', () => {
-              if (t) clearTimeout(t);
-              t = setTimeout(() => filterMembers('all'), 150);
-            });
-          }
-
-          // Set default filter to "all" (Total Members)
-          filterMembers('all');
-
-          console.log('Probation data loaded successfully:', data);
-        })
-        .catch(error => {
-          console.error('Error loading probation data:', error);
-          const loadingState = document.getElementById('loadingState');
-          const errorState = document.getElementById('errorState');
-          
-          loadingState.style.display = 'none';
-          errorState.style.display = 'block';
-          document.getElementById('errorMessage').textContent = 'Network error: ' + error.message;
-        });
-    }
-
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', function() {
-      createParticles();
-      loadProbationData();
+<script>
+  const input = document.getElementById("memberSearch");
+  const rows = document.querySelectorAll(".member-row");
+  input?.addEventListener("input", () => {
+    const q = input.value.toLowerCase().trim();
+    rows.forEach((r) => {
+      const name = r.getAttribute("data-name") || "";
+      r.style.display = name.includes(q) ? "" : "none";
     });
-  </script>
-</body>
-</html>
+  });
+</script>
+
+{% endblock %}
