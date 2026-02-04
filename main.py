@@ -2850,10 +2850,16 @@ def download_csv_files():
 @app.route("/trends")
 def trends():
     """Render the trends analysis page with consistent header metadata"""
-    latest_file, latest_date_str, file_timestamp = get_latest_csv_file()
+    latest_file, date_str, file_timestamp = get_latest_csv_file()
     time_ago = get_time_ago_string(file_timestamp) if file_timestamp else "Recently"
     return render_template(
-        "trends.html", time_ago=time_ago, latest_date=latest_date_str or "-"
+        "trends.html",
+        time_ago=time_ago,
+        latest_date=(
+            datetime.strptime(date_str, "%Y-%m-%d").strftime("%B %d, %Y")
+            if date_str
+            else "Unknown"
+        ),
     )
 
 
