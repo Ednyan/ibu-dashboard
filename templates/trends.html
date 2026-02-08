@@ -725,7 +725,7 @@ content %}
       else if (s.startsWith("team:")) label = " " + s.substring(5);
 
       tag.innerHTML = `<span class="max-w-[18rem] truncate">${label}</span>
-                       <button class="text-white/60 hover:text-white" aria-label="remove">×</button>`;
+                       <button class="text-white/60 hover:text-white" aria-label="remove">x</button>`;
 
       tag.querySelector("button").addEventListener("click", () => {
         selectedSeries.delete(s);
