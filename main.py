@@ -1165,6 +1165,11 @@ def get_chart_data():
 
 
 @app.route("/visualization")
+def redirect_visualization():
+    return redirect(url_for("visualization"), code=301)
+
+
+@app.route("/team_info")
 def visualization():
     # Get date and time info from the latest file for display
     latest_date_fmt = "No data"
