@@ -2458,7 +2458,7 @@ def test_notification():
         return jsonify({"error": f"Error sending test notification: {str(e)}"})
 
 
-@app.route("/notification-admin")
+@app.route("/admin")
 def notification_admin():
     if not session.get("admin_authenticated"):
         return redirect(url_for("admin_login"))
@@ -2474,7 +2474,7 @@ def notification_admin():
 
     members = _load_members_with_overrides()
     return render_template(
-        "notification-admin.html",
+        "admin.html",
         status=status,
         recipients=recipients,
         members=members,
