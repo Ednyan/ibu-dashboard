@@ -8,6 +8,7 @@ from flask import (
     redirect,
     url_for,
     send_file,
+    flash,
 )
 from datetime import datetime, timedelta
 import pandas as pd
@@ -26,7 +27,7 @@ import threading
 import logging
 import time
 from dotenv import load_dotenv
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, BadRequest
 import minify_html
 
 # Rust imports
@@ -2459,12 +2460,277 @@ def test_notification():
 
 @app.route("/notification-admin")
 def notification_admin():
-    """Admin panel for notification system - requires authentication"""
-    # Check if user is authenticated
     if not session.get("admin_authenticated"):
         return redirect(url_for("admin_login"))
 
-    return render_template("notification-admin.html")
+    try:
+        status = build_notification_status()
+    except Exception as e:
+        status = {"enabled": False, "error": str(e)}
+
+    recipients = []
+    if status.get("enabled"):
+        recipients = status.get("admin_recipients") or []
+
+    members = _load_members_with_overrides()
+    return render_template(
+        "notification-admin.html",
+        status=status,
+        recipients=recipients,
+        members=members,
+    )
+
+
+def _load_members_with_overrides():
+    file_path, date_str, _ = get_latest_csv_file()
+    if not file_path:
+        return []
+    df = pd.read_csv(file_path)
+    df.columns = df.columns.str.strip()
+    df = df.rename(columns={"name": "Member", "points": "Points"})
+    if "Member" not in df.columns:
+        return []
+
+    overrides = load_probation_overrides() or {}
+    names = sorted([str(n) for n in df["Member"].dropna().unique().tolist()])
+
+    members = []
+    for n in names:
+        o = overrides.get(n, {}) if isinstance(overrides, dict) else {}
+        members.append(
+            {
+                "name": n,
+                "overrides": {
+                    "week_1": o.get("week_1") if "week_1" in o else None,
+                    "month_1": o.get("month_1") if "month_1" in o else None,
+                    "month_3": o.get("month_3") if "month_3" in o else None,
+                },
+            }
+        )
+    return members
+
+
+@app.post("/admin/notification/test")
+def admin_notification_test():
+    if not session.get("admin_authenticated"):
+        return redirect(url_for("admin_login"))
+
+    try:
+        if not NOTIFICATIONS_ENABLED:
+            raise BadRequest("Notification service not available")
+
+        send_test_notification()
+        flash("Test email sent.", "success")
+    except Exception as e:
+        flash(f"Failed to send test email: {e}", "error")
+
+    return redirect(url_for("notification_admin"))
+
+
+def send_test_notification():
+    try:
+        # Create a test member data
+        test_member = {
+            "name": "Test Member",
+            "joined_date": "2025-01-01",
+            "days_since_joined": 100,
+            "current_points": 250000,
+            "probation_status": "failed",
+            "milestones": {
+                "week_1": {
+                    "target": 500000,
+                    "passed": False,
+                    "points_at_deadline": 100000,
+                    "remaining_points": 400000,
+                    "days_left": 0,
+                },
+                "month_1": {
+                    "target": 1500000,
+                    "passed": False,
+                    "points_at_deadline": 250000,
+                    "remaining_points": 1250000,
+                    "days_left": 0,
+                },
+                "month_3": {
+                    "target": 3000000,
+                    "passed": None,
+                    "points_at_deadline": None,
+                    "remaining_points": 2750000,
+                    "days_left": 10,
+                },
+            },
+        }
+
+        # Send test notification
+        success = notification_service.notify_probation_failure(test_member)
+
+        if success:
+            return jsonify({"message": "Test notification sent successfully!"})
+        else:
+            return jsonify(
+                {
+                    "error": "Failed to send test notification. Check email configuration."
+                }
+            )
+
+    except Exception as e:
+        return jsonify({"error": f"Error sending test notification: {str(e)}"})
+
+
+@app.post("/admin/emails/add")
+def admin_emails_add():
+    if not session.get("admin_authenticated"):
+        return redirect(url_for("admin_login"))
+
+    email = (request.form.get("email") or "").strip()
+    if not email:
+        flash("Missing email.", "error")
+        return redirect(url_for("notification_admin"))
+
+    try:
+        ok = notification_service.add_admin_emails([{"email": email}])
+        if not ok:
+            raise RuntimeError("Failed to add email.")
+        flash("Recipient added.", "success")
+    except Exception as e:
+        flash(f"Failed to add recipient: {e}", "error")
+
+    return redirect(url_for("notification_admin"))
+
+
+@app.post("/admin/emails/remove")
+def admin_emails_remove():
+    if not session.get("admin_authenticated"):
+        return redirect(url_for("admin_login"))
+
+    email = (request.form.get("email") or "").strip()
+    if not email:
+        flash("Missing email.", "error")
+        return redirect(url_for("notification_admin"))
+
+    try:
+        ok = notification_service.remove_admin_emails([email])
+        if not ok:
+            raise RuntimeError("Failed to remove email.")
+        flash("Recipient removed.", "success")
+    except Exception as e:
+        flash(f"Failed to remove recipient: {e}", "error")
+
+    return redirect(url_for("notification_admin"))
+
+
+@app.post("/admin/emails/prefs")
+def admin_emails_update_prefs():
+    if not session.get("admin_authenticated"):
+        return redirect(url_for("admin_login"))
+
+    email = (request.form.get("email") or "").strip()
+    if not email:
+        flash("Missing email.", "error")
+        return redirect(url_for("notification_admin"))
+
+    prefs = {
+        "failed": bool(request.form.get("failed")),
+        "passed": bool(request.form.get("passed")),
+        "non_compliant": bool(request.form.get("non_compliant")),
+    }
+
+    try:
+        ok = notification_service.update_admin_email_prefs(email, prefs)
+        if not ok:
+            raise RuntimeError("Failed to save preferences.")
+        flash("Preferences saved.", "success")
+    except Exception as e:
+        flash(f"Failed to save preferences: {e}", "error")
+
+    return redirect(url_for("notification_admin"))
+
+
+@app.post("/admin/overrides/set")
+def admin_overrides_set():
+    if not session.get("admin_authenticated"):
+        return redirect(url_for("admin_login"))
+
+    member = (request.form.get("member") or "").strip()
+    key = (request.form.get("key") or "").strip()
+    sval = request.form.get("val")
+
+    if not member or key not in ("week_1", "month_1", "month_3"):
+        flash("Invalid override request.", "error")
+        return redirect(url_for("notification_admin"))
+
+    incoming_val = None
+    if sval == "true":
+        incoming_val = True
+    elif sval == "false":
+        incoming_val = False
+    else:
+        incoming_val = None
+
+    try:
+        data = load_probation_overrides() or {}
+        per = data.get(member, {}) if isinstance(data.get(member, {}), dict) else {}
+
+        if incoming_val is True or incoming_val is False:
+            per[key] = bool(incoming_val)
+        else:
+            per.pop(key, None)
+
+        if per:
+            data[member] = per
+        else:
+            data.pop(member, None)
+
+        if not save_probation_overrides(data):
+            raise RuntimeError("Failed to save overrides.")
+
+        flash("Override updated.", "success")
+    except Exception as e:
+        flash(f"Failed to update override: {e}", "error")
+
+    return redirect(url_for("notification_admin"))
+
+
+@app.post("/admin/overrides/clear")
+def admin_overrides_clear():
+    if not session.get("admin_authenticated"):
+        return redirect(url_for("admin_login"))
+
+    member = (request.form.get("member") or "").strip()
+    if not member:
+        flash("Missing member.", "error")
+        return redirect(url_for("notification_admin"))
+
+    try:
+        data = load_probation_overrides() or {}
+        data.pop(member, None)
+        if not save_probation_overrides(data):
+            raise RuntimeError("Failed to save overrides.")
+        flash("Overrides cleared.", "success")
+    except Exception as e:
+        flash(f"Failed to clear overrides: {e}", "error")
+
+    return redirect(url_for("notification_admin"))
+
+
+def build_notification_status():
+    if not NOTIFICATIONS_ENABLED:
+        return {"enabled": False, "error": "Notification service not available"}
+
+    config_status = {
+        "enabled": True,
+        "smtp_server": notification_service.smtp_server,
+        "smtp_port": notification_service.smtp_port,
+        "sender_email": notification_service.sender_email or "Not configured",
+        "sender_configured": bool(notification_service.sender_email),
+        "admin_emails_configured": len(notification_service.admin_emails),
+        "admin_emails": notification_service.admin_emails
+        if notification_service.admin_emails
+        else [],
+        "admin_recipients": notification_service.admin_recipients,
+        "notification_history_count": len(notification_service.notification_history),
+    }
+    return config_status
 
 
 @app.route("/api/admin/emails", methods=["GET", "POST", "DELETE", "PATCH"])
@@ -2691,32 +2957,11 @@ def admin_logout():
 @app.route("/notification_status")
 def notification_status():
     """Get notification system status and configuration - requires authentication"""
-    # Check if user is authenticated
     if not session.get("admin_authenticated"):
         return jsonify({"error": "Authentication required"}), 401
 
-    if not NOTIFICATIONS_ENABLED:
-        return jsonify(
-            {"enabled": False, "error": "Notification service not available"}
-        )
-
     try:
-        config_status = {
-            "enabled": True,
-            "smtp_server": notification_service.smtp_server,
-            "smtp_port": notification_service.smtp_port,
-            "sender_email": notification_service.sender_email or "Not configured",
-            "sender_configured": bool(notification_service.sender_email),
-            "admin_emails_configured": len(notification_service.admin_emails),
-            "admin_emails": notification_service.admin_emails
-            if notification_service.admin_emails
-            else [],
-            "admin_recipients": notification_service.admin_recipients,
-            "notification_history_count": len(
-                notification_service.notification_history
-            ),
-        }
-        return jsonify(config_status)
+        return jsonify(build_notification_status())
     except Exception as e:
         return jsonify({"enabled": False, "error": str(e)})
 

@@ -1,982 +1,387 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>I.B.U. NOTIFICATION ADMIN</title>
+{% extends "base.html" %} {% block title %}I.B.U. Admin{% endblock %} {% block
+content %}
+<div class="mx-auto w-full max-w-6xl px-4 py-6">
+  <header
+    class="rounded-2xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+  >
+    <div
+      class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div>
+        <h1 class="text-xl font-semibold tracking-wide text-white">Admin</h1>
+        <p class="mt-1 text-sm text-white/70">
+          Email recipients and member overrides
+        </p>
+      </div>
+      <a
+        href="{{ url_for('admin_logout') }}"
+        class="inline-flex items-center justify-center rounded-xl border border-red-500/40 bg-red-500/15 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-500/25 focus:outline-none focus:ring-2 focus:ring-red-300/40"
+      >
+        Logout
+      </a>
+    </div>
+  </header>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="{{ url_for('static', filename='ibu-icon.svg') }}"
-    />
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="{{ url_for('static', filename='graphs-modern.css') }}"
-    />
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %}
+  <div class="mt-4 space-y-2">
+    {% for category, msg in messages %}
+    <div
+      class="rounded-xl border border-white/10 bg-black/20 p-3 text-sm {% if category == 'success' %} text-emerald-300 {% elif category == 'error' %} text-red-300 {% else %} text-white/80 {% endif %}"
+    >
+      {{ msg }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %} {% endwith %}
 
-    <style>
-      .admin-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 20px;
-      }
+  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-1">
+    <section
+      class="rounded-2xl border border-white/10 bg-neutral-800 p-5 shadow-sm {% if status.enabled %} ring-2 ring-emerald-500/60 {% else %} ring-2 ring-red-500/60 {% endif %}"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-base font-semibold text-white">System Status</h2>
+        </div>
 
-      .status-card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
-        padding: 20px;
-        margin: 20px 0;
-      }
+        <div class="flex flex-wrap gap-2">
+          <form method="post" action="{{ url_for('admin_notification_test') }}">
+            {% set test_disabled = (not status.enabled) or (not
+            status.sender_configured) or (status.admin_emails_configured|int <=
+            0) %}
 
-      .status-enabled {
-        border-left: 4px solid #22c55e;
-      }
-
-      .status-disabled {
-        border-left: 4px solid #ef4444;
-      }
-
-      .config-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .config-item:last-child {
-        border-bottom: none;
-      }
-
-      .config-label {
-        color: #c0c0c0;
-        font-weight: 500;
-      }
-
-      .config-value {
-        color: #e06150;
-        font-weight: 600;
-      }
-
-      .config-value.success {
-        color: #22c55e;
-      }
-
-      .config-value.error {
-        color: #ef4444;
-      }
-
-      .test-button {
-        background: linear-gradient(135deg, #e06150 0%, #d14a3a 100%);
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 12px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(224, 97, 80, 0.3);
-        margin: 10px 5px;
-      }
-
-      .test-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(224, 97, 80, 0.4);
-      }
-
-      .test-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-
-      .result-box {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        padding: 15px;
-        margin: 15px 0;
-        font-family: monospace;
-        font-size: 0.9rem;
-        white-space: pre-wrap;
-      }
-
-      .result-success {
-        border-left: 4px solid #22c55e;
-        color: #22c55e;
-      }
-
-      .result-error {
-        border-left: 4px solid #ef4444;
-        color: #ef4444;
-      }
-
-      .setup-instructions {
-        background: rgba(255, 193, 7, 0.1);
-        border: 1px solid rgba(255, 193, 7, 0.3);
-        border-radius: 10px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-
-      .setup-instructions h3 {
-        color: #ffc107;
-        margin-bottom: 15px;
-      }
-
-      .setup-instructions ol {
-        color: #e0e0e0;
-        line-height: 1.6;
-      }
-
-      .setup-instructions code {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: monospace;
-        color: #ffc107;
-      }
-
-      .nav-buttons {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-      }
-
-      .logout-button {
-        background: linear-gradient(
-          135deg,
-          rgba(220, 53, 69, 0.8),
-          rgba(180, 43, 59, 0.8)
-        );
-        border: 2px solid rgba(220, 53, 69, 0.6);
-        border-radius: 15px;
-        color: #fff;
-        font-size: 1rem;
-        font-weight: 600;
-        padding: 12px 24px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(10px);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
-      }
-
-      .logout-button:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(220, 53, 69, 1),
-          rgba(180, 43, 59, 1)
-        );
-        border-color: rgba(220, 53, 69, 0.8);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
-      }
-
-      .logout-button:active {
-        transform: translateY(0);
-      }
-
-      /* Overrides manager */
-      .overrides-card {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
-        padding: 20px;
-        margin: 20px 0;
-      }
-      .overrides-grid {
-        display: grid;
-        grid-template-columns: 1fr 210px 210px 210px auto;
-        gap: 8px 6px;
-        align-items: center;
-      }
-      .overrides-grid .head {
-        font-weight: 700;
-        color: #fff;
-        padding-bottom: 6px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-        margin-bottom: 6px;
-      }
-      .ov-name {
-        color: #fff;
-      }
-      .ov-check {
-        text-align: center;
-      }
-      .ov-actions {
-        text-align: right;
-      }
-      .small-btn {
-        background: rgba(224, 97, 80, 0.9);
-        border: 1px solid rgba(224, 97, 80, 0.6);
-        color: #fff;
-        border-radius: 8px;
-        padding: 6px 10px;
-        font-size: 0.85rem;
-        cursor: pointer;
-      }
-      .small-btn.secondary {
-        background: rgba(99, 102, 241, 0.9);
-        border-color: rgba(99, 102, 241, 0.6);
-      }
-      .filter-row {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 12px;
-      }
-      .filter-row input {
-        flex: 1;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        background: rgba(0, 0, 0, 0.2);
-        color: #fff;
-      }
-
-      /* Tri-state toggle styles */
-      .tri-toggle {
-        display: inline-flex;
-        gap: 0;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
-      }
-      .tri-toggle button {
-        appearance: none;
-        -webkit-appearance: none;
-        background: transparent;
-        color: #e5e7eb;
-        border: none;
-        padding: 6px 10px;
-        cursor: pointer;
-        font-size: 0.85rem;
-        font-weight: 600;
-        min-width: 60px;
-        transition: all 0.15s ease;
-      }
-      .tri-toggle button:hover {
-        background: rgba(255, 255, 255, 0.08);
-      }
-      .tri-toggle button + button {
-        border-left: 1px solid rgba(255, 255, 255, 0.14);
-      }
-      .tri-toggle .active {
-        color: #fff;
-      }
-      .tri-toggle .opt-none.active {
-        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
-      }
-      .tri-toggle .opt-pass.active {
-        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      }
-      .tri-toggle .opt-fail.active {
-        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-      }
-      .legend {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        color: #c0c0c0;
-        font-size: 0.9rem;
-        margin: 6px 0 12px;
-      }
-      .legend .pill {
-        padding: 4px 8px;
-        border-radius: 999px;
-        font-weight: 600;
-      }
-      .legend .pill.none {
-        background: #4b5563;
-        color: #fff;
-      }
-      .legend .pill.pass {
-        background: #16a34a;
-        color: #fff;
-      }
-      .legend .pill.fail {
-        background: #dc2626;
-        color: #fff;
-      }
-      .emails-card {
-        margin-top: 20px;
-      }
-      .email-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .email-row:last-child {
-        border-bottom: none;
-      }
-      .email-text {
-        color: #fff;
-        word-break: break-all;
-      }
-      .email-actions button {
-        margin-left: 8px;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Particles background -->
-    <div class="particles-container" id="particles"></div>
-
-    <!-- Background gradient overlay -->
-    <div class="background-overlay"></div>
-
-    <!-- Main container -->
-    <div class="main-container">
-      <!-- Header section -->
-      <header class="header-section">
-        <div class="header-content">
-          <div class="title-section">
-            <h1 class="main-title animate-slide-up">ADMIN MANAGER</h1>
-            <p class="subtitle animate-slide-up" style="animation-delay: 0.2s">
-              Admin page for Email notification system configuration, Testing
-              and Member override manager
-            </p>
-          </div>
-          <div class="nav-buttons">
             <button
-              class="nav-button animate-slide-up"
-              style="animation-delay: 0.4s"
-              onclick="window.location.href='{{ url_for('index') }}'"
+              type="submit"
+              class="inline-flex items-center justify-center rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-400 disabled:opacity-50"
+              {%
+              if
+              test_disabled
+              %}disabled{%
+              endif
+              %}
             >
-              <span>Main Page</span>
+              Send Test Email
             </button>
-            <button
-              class="logout-button animate-slide-up"
-              style="animation-delay: 0.5s"
-              onclick="window.location.href='{{ url_for('admin_logout') }}'"
-            >
-              <span>🔒 Logout</span>
-            </button>
-          </div>
-        </div>
-      </header>
+          </form>
 
-      <div class="admin-container">
-        <!-- Notification Status -->
-        <div id="notificationStatus" class="status-card">
-          <h2>🔧 System Status</h2>
-          <div id="statusContent">
-            <div class="loading-spinner-member"></div>
-            <p style="text-align: center; color: #fff; margin-top: 20px">
-              Loading notification status...
-            </p>
-          </div>
-        </div>
-
-        <!-- Setup Instructions -->
-        <div
-          id="setupInstructions"
-          class="setup-instructions"
-          style="display: none"
-        >
-          <h3>📋 Setup Instructions</h3>
-          <ol>
-            <li>
-              Install required package: <code>pip install python-dotenv</code>
-            </li>
-            <li>
-              Copy <code>.env.example</code> to <code>.env</code> in your
-              project root
-            </li>
-            <li>
-              Edit <code>.env</code> file with your email settings:
-              <ul>
-                <li>
-                  <strong>Gmail:</strong> Use your email and an "App Password"
-                  (not regular password)
-                </li>
-                <li>
-                  <strong>Other providers:</strong> Use appropriate SMTP
-                  settings
-                </li>
-              </ul>
-            </li>
-            <li>Add admin email addresses to receive notifications</li>
-            <li>Restart the Flask application</li>
-            <li>Test the system using the button below</li>
-          </ol>
-        </div>
-
-        <!-- Test Controls -->
-        <div class="status-card">
-          <h2>🧪 Testing</h2>
-          <p style="color: #c0c0c0; margin-bottom: 15px">
-            Send a test probation failure notification to verify your email
-            configuration.
-          </p>
-
-          <button
-            id="testNotificationBtn"
-            class="test-button"
-            onclick="testNotification()"
+          <a
+            href="{{ url_for('notification_admin') }}"
+            class="inline-flex items-center justify-center rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-400"
           >
-            📧 Send Test Notification
-          </button>
-
-          <button
-            class="test-button"
-            onclick="refreshStatus()"
-            style="
-              background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-            "
-          >
-            🔄 Refresh Status
-          </button>
-
-          <div id="testResult"></div>
-        </div>
-
-        <!-- Admin Emails Manager -->
-        <div class="status-card emails-card">
-          <h2>📬 Admin Recipients</h2>
-          <p style="color: #c0c0c0; margin-bottom: 12px">
-            Manage who receives notification emails and which types they get.
-          </p>
-          <div style="display: flex; gap: 10px; margin-bottom: 10px">
-            <input
-              id="newEmail"
-              placeholder="name@example.com"
-              style="
-                flex: 1;
-                padding: 8px 10px;
-                border-radius: 8px;
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                background: rgba(0, 0, 0, 0.2);
-                color: #fff;
-              "
-            />
-            <button class="small-btn" onclick="addEmail()">Add</button>
-          </div>
-          <div id="emailsList"></div>
-          <div id="emailsMsg" style="margin-top: 10px"></div>
-        </div>
-
-        <!-- Overrides Manager -->
-        <div class="overrides-card">
-          <h2>🛠️ Overrides Manager</h2>
-          <p style="color: #c0c0c0; margin-bottom: 8px">
-            Set per-milestone override: None (default), Pass, or Fail. Changes
-            save instantly.
-          </p>
-          <div class="legend">
-            <span>Legend:</span>
-            <span class="pill none">None</span>
-            <span class="pill pass">Pass</span>
-            <span class="pill fail">Fail</span>
-          </div>
-          <div class="filter-row">
-            <input
-              id="ovFilter"
-              placeholder="Filter members by name..."
-              oninput="renderOverrides()"
-            />
-            <button class="small-btn secondary" onclick="loadOverrides()">
-              Reload
-            </button>
-          </div>
-          <div id="ovGrid" class="overrides-grid">
-            <!-- Populated by JS -->
-          </div>
-          <div id="ovMsg" style="margin-top: 10px"></div>
+            Refresh
+          </a>
         </div>
       </div>
-    </div>
 
-    <!-- Scripts -->
-    <script>
-      // Particle system (same as other pages)
-      function createParticles() {
-        const container = document.getElementById("particles");
-        const particleCount = 20;
+      {% if not status.enabled or not status.sender_configured or
+      status.admin_emails_configured|int <= 0 %}
+      <div
+        class="mt-4 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-sm text-amber-200"
+      >
+        Email notifications are not fully configured. {% if not status.enabled
+        %}
+        <div class="mt-2">
+          Status: Disabled{% if status.error %} — {{ status.error }}{% endif %}
+        </div>
+        {% endif %} {% if status.enabled and not status.sender_configured %}
+        <div class="mt-2">Sender is not configured.</div>
+        {% endif %} {% if status.enabled and status.admin_emails_configured|int
+        <= 0 %}
+        <div class="mt-2">No admin recipients configured.</div>
+        {% endif %}
+      </div>
+      {% endif %}
 
-        for (let i = 0; i < particleCount; i++) {
-          const particle = document.createElement("div");
-          particle.className = "particle";
+      <div class="mt-4 text-sm text-white/80">
+        <div
+          class="flex items-start justify-between gap-4 py-2 border-b border-white/10"
+        >
+          <span class="text-white/60">Status</span>
+          <span class="text-right font-semibold">
+            {% if status.enabled %}<span class="text-emerald-300">Enabled</span>
+            {% else %}<span class="text-red-300">Disabled</span>{% endif %}
+          </span>
+        </div>
 
-          const size = Math.random() * 6 + 2;
-          particle.style.width = size + "px";
-          particle.style.height = size + "px";
+        {% if status.enabled %}
+        <div
+          class="flex items-start justify-between gap-4 py-2 border-b border-white/10"
+        >
+          <span class="text-white/60">SMTP</span>
+          <span class="text-right font-semibold text-white">
+            {{ status.smtp_server }}:{{ status.smtp_port }}
+          </span>
+        </div>
 
-          particle.style.left = Math.random() * 100 + "%";
-          particle.style.top = Math.random() * 100 + "%";
+        <div
+          class="flex items-start justify-between gap-4 py-2 border-b border-white/10"
+        >
+          <span class="text-white/60">Sender</span>
+          <span
+            class="text-right font-semibold {% if status.sender_configured %}text-emerald-300{% else %}text-red-300{% endif %}"
+          >
+            {{ status.sender_email or "Not configured" }}
+          </span>
+        </div>
 
-          particle.style.animationDelay = Math.random() * 8 + "s";
-          particle.style.animationDuration = Math.random() * 4 + 6 + "s";
+        <div
+          class="flex items-start justify-between gap-4 py-2 border-b border-white/10"
+        >
+          <span class="text-white/60">Admin recipients</span>
+          <span
+            class="text-right font-semibold {% if status.admin_emails_configured|int > 0 %}text-emerald-300{% else %}text-red-300{% endif %}"
+          >
+            {{ status.admin_emails_configured|int }}
+          </span>
+        </div>
 
-          container.appendChild(particle);
-        }
-      }
+        <div
+          class="flex items-start justify-between gap-4 py-2 border-b border-white/10"
+        >
+          <span class="text-white/60">Notifications sent</span>
+          <span class="text-right font-semibold text-white">
+            {{ status.notification_history_count }}
+          </span>
+        </div>
 
-      function loadNotificationStatus() {
-        fetch("/notification_status")
-          .then((response) => response.json())
-          .then((data) => {
-            displayNotificationStatus(data);
-          })
-          .catch((error) => {
-            console.error("Error loading notification status:", error);
-            document.getElementById("statusContent").innerHTML = `
-            <div class="result-box result-error">
-              Error loading notification status: ${error.message}
+        {% if status.admin_emails %}
+        <div class="flex items-start justify-between gap-4 py-2">
+          <span class="text-white/60">Recipients</span>
+          <span class="text-right font-semibold text-white">
+            {{ status.admin_emails|join(", ") }}
+          </span>
+        </div>
+        {% endif %} {% endif %}
+      </div>
+    </section>
+
+    <section
+      class="rounded-2xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+    >
+      <h2 class="text-base font-semibold text-white">Admin Recipients</h2>
+      <p class="mt-1 text-sm text-white/70">
+        Add/remove emails and toggle what they receive.
+      </p>
+
+      <form
+        method="post"
+        action="{{ url_for('admin_emails_add') }}"
+        class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center"
+      >
+        <input
+          name="email"
+          type="email"
+          required
+          placeholder="name@example.com"
+          class="w-full flex-1 rounded-xl border border-white/10 bg-neutral-800 py-2.5 px-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
+        />
+        <button
+          type="submit"
+          class="inline-flex items-center justify-center rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300/60"
+        >
+          Add
+        </button>
+      </form>
+
+      <div class="mt-3 divide-y divide-white/10">
+        {% if not recipients %}
+        <div class="py-3 text-sm text-white/60">No recipients configured.</div>
+        {% else %} {% for r in recipients %} {% set email = r.email %} {% set p
+        = r.prefs or {} %}
+        <div
+          class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="text-sm font-semibold text-white break-all">
+            {{ email }}
+          </div>
+
+          <form
+            method="post"
+            action="{{ url_for('admin_emails_update_prefs') }}"
+            class="flex flex-wrap items-center gap-4 text-sm text-white/70"
+          >
+            <input type="hidden" name="email" value="{{ email }}" />
+            <label class="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                class="h-4 w-4 accent-emerald-500"
+                name="failed"
+                value="1"
+                {%
+                if
+                p.failed
+                %}checked{%
+                endif
+                %}
+                onchange="this.form.submit()"
+              />
+              Failed
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                class="h-4 w-4 accent-emerald-500"
+                name="passed"
+                value="1"
+                {%
+                if
+                p.passed
+                %}checked{%
+                endif
+                %}
+                onchange="this.form.submit()"
+              />
+              Passed
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                class="h-4 w-4 accent-emerald-500"
+                name="non_compliant"
+                value="1"
+                {%
+                if
+                p.non_compliant
+                %}checked{%
+                endif
+                %}
+                onchange="this.form.submit()"
+              />
+              Non-compliant
+            </label>
+          </form>
+
+          <form method="post" action="{{ url_for('admin_emails_remove') }}">
+            <input type="hidden" name="email" value="{{ email }}" />
+            <button
+              type="submit"
+              class="inline-flex items-center justify-center rounded-xl bg-rose-500 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300/60"
+            >
+              Remove
+            </button>
+          </form>
+        </div>
+        {% endfor %} {% endif %}
+      </div>
+    </section>
+
+    <section
+      class="rounded-2xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+    >
+      <h2 class="text-base font-semibold text-white">Overrides</h2>
+      <p class="mt-1 text-sm text-white/70">
+        Per member: Week 1, Month 1, Month 3 (None/Pass/Fail).
+      </p>
+
+      <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <input
+          id="ovFilter"
+          placeholder="Filter members..."
+          class="w-full flex-1 rounded-xl border border-white/10 bg-neutral-800 py-2.5 px-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
+        />
+        <a
+          href="{{ url_for('notification_admin') }}"
+          class="inline-flex items-center justify-center rounded-xl bg-indigo-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-300/60"
+        >
+          Reload
+        </a>
+      </div>
+
+      <div class="mt-3 overflow-x-auto">
+        <div class="min-w-[760px] rounded-xl border border-white/10">
+          <div
+            class="grid grid-cols-5 gap-3 bg-white/5 px-3 py-2 text-xs font-semibold text-white/80"
+          >
+            <div>Member</div>
+            <div class="text-center">Week 1</div>
+            <div class="text-center">Month 1</div>
+            <div class="text-center">Month 3</div>
+            <div class="text-right">Actions</div>
+          </div>
+
+          <div id="ovGrid" class="divide-y divide-white/10">
+            {% for m in members %} {% set o = m.overrides or {} %}
+            <div
+              class="ov-row grid grid-cols-5 items-center gap-3 px-3 py-3 text-sm"
+              data-name="{{ m.name|lower }}"
+            >
+              <div class="font-medium text-white">{{ m.name }}</div>
+
+              {% for key, label in [("week_1","Week 1"),("month_1","Month
+              1"),("month_3","Month 3")] %} {% set val = o.get(key) %}
+              <div class="text-center">
+                <form
+                  method="post"
+                  action="{{ url_for('admin_overrides_set') }}"
+                  class="inline-flex overflow-hidden rounded-xl border border-white/10 bg-white/5"
+                >
+                  <input type="hidden" name="member" value="{{ m.name }}" />
+                  <input type="hidden" name="key" value="{{ key }}" />
+
+                  <button
+                    type="submit"
+                    name="val"
+                    value=""
+                    class="px-3 py-1.5 text-xs font-semibold {% if val is none %} bg-slate-600 text-white {% else %} text-white/80 hover:bg-white/10 {% endif %}"
+                  >
+                    None
+                  </button>
+                  <button
+                    type="submit"
+                    name="val"
+                    value="true"
+                    class="border-l border-white/10 px-3 py-1.5 text-xs font-semibold {% if val is sameas true %} bg-emerald-600 text-white {% else %} text-white/80 hover:bg-white/10 {% endif %}"
+                  >
+                    Pass
+                  </button>
+                  <button
+                    type="submit"
+                    name="val"
+                    value="false"
+                    class="border-l border-white/10 px-3 py-1.5 text-xs font-semibold {% if val is sameas false %} bg-red-600 text-white {% else %} text-white/80 hover:bg-white/10 {% endif %}"
+                  >
+                    Fail
+                  </button>
+                </form>
+              </div>
+              {% endfor %}
+
+              <div class="text-right">
+                <form
+                  method="post"
+                  action="{{ url_for('admin_overrides_clear') }}"
+                >
+                  <input type="hidden" name="member" value="{{ m.name }}" />
+                  <button
+                    type="submit"
+                    class="inline-flex items-center justify-center rounded-xl bg-rose-500 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-300/60"
+                  >
+                    Clear
+                  </button>
+                </form>
+              </div>
             </div>
-          `;
-          });
-      }
-
-      function displayNotificationStatus(status) {
-        const statusCard = document.getElementById("notificationStatus");
-        const statusContent = document.getElementById("statusContent");
-        const setupInstructions = document.getElementById("setupInstructions");
-        const testBtn = document.getElementById("testNotificationBtn");
-
-        if (status.enabled) {
-          statusCard.classList.add("status-enabled");
-          statusCard.classList.remove("status-disabled");
-          setupInstructions.style.display = "none";
-          testBtn.disabled = false;
-
-          statusContent.innerHTML = `
-          <div class="config-item">
-            <span class="config-label">Status:</span>
-            <span class="config-value success">✅ ENABLED</span>
+            {% endfor %}
           </div>
-          <div class="config-item">
-            <span class="config-label">SMTP Server:</span>
-            <span class="config-value">${status.smtp_server}:${
-            status.smtp_port
-          }</span>
-          </div>
-          <div class="config-item">
-            <span class="config-label">Sender Email:</span>
-            <span class="config-value ${
-              status.sender_configured ? "success" : "error"
-            }">
-              ${status.sender_configured ? "✅" : "❌"} ${
-            status.sender_email || "Not configured"
-          }
-            </span>
-          </div>
-          <div class="config-item">
-            <span class="config-label">Admin Recipients:</span>
-            <span class="config-value ${
-              status.admin_emails_configured > 0 ? "success" : "error"
-            }">
-              ${status.admin_emails_configured} configured
-            </span>
-          </div>
-          <div class="config-item">
-            <span class="config-label">Notifications Sent:</span>
-            <span class="config-value">${
-              status.notification_history_count
-            }</span>
-          </div>
-          ${
-            status.admin_emails.length > 0
-              ? `
-          <div class="config-item">
-            <span class="config-label">Recipients:</span>
-            <span class="config-value">${status.admin_emails.join(", ")}</span>
-          </div>
-          `
-              : ""
-          }
-        `;
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
 
-          if (
-            !status.sender_configured ||
-            status.admin_emails_configured === 0
-          ) {
-            setupInstructions.style.display = "block";
-            testBtn.disabled = true;
-          }
-        } else {
-          statusCard.classList.add("status-disabled");
-          statusCard.classList.remove("status-enabled");
-          setupInstructions.style.display = "block";
-          testBtn.disabled = true;
+<script>
+  (function () {
+    const input = document.getElementById("ovFilter");
+    const grid = document.getElementById("ovGrid");
+    if (!input || !grid) return;
 
-          statusContent.innerHTML = `
-          <div class="config-item">
-            <span class="config-label">Status:</span>
-            <span class="config-value error">❌ DISABLED</span>
-          </div>
-          <div class="config-item">
-            <span class="config-label">Error:</span>
-            <span class="config-value error">${
-              status.error || "Notification service not available"
-            }</span>
-          </div>
-        `;
-        }
-      }
-
-      function testNotification() {
-        const testBtn = document.getElementById("testNotificationBtn");
-        const testResult = document.getElementById("testResult");
-
-        testBtn.disabled = true;
-        testBtn.textContent = "📧 Sending...";
-
-        testResult.innerHTML =
-          '<div class="result-box">Sending test notification...</div>';
-
-        fetch("/test_notification")
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.message) {
-              testResult.innerHTML = `<div class="result-box result-success">✅ ${data.message}</div>`;
-            } else {
-              testResult.innerHTML = `<div class="result-box result-error">❌ ${
-                data.error || "Unknown error"
-              }</div>`;
-            }
-          })
-          .catch((error) => {
-            testResult.innerHTML = `<div class="result-box result-error">❌ Network error: ${error.message}</div>`;
-          })
-          .finally(() => {
-            testBtn.disabled = false;
-            testBtn.textContent = "📧 Send Test Notification";
-          });
-      }
-
-      function refreshStatus() {
-        document.getElementById("statusContent").innerHTML = `
-        <div class="loading-spinner-member"></div>
-        <p style="text-align: center; color: #fff; margin-top: 20px;">Refreshing status...</p>
-      `;
-        loadNotificationStatus();
-      }
-
-      // --- Admin Emails Manager ---
-      function fetchEmails() {
-        // Request full structured list
-        fetch("/api/admin/emails?full=1")
-          .then((r) => r.json())
-          .then((res) => {
-            if (!res || res.error) {
-              document.getElementById(
-                "emailsMsg"
-              ).innerHTML = `<div class="result-box result-error">❌ ${
-                res.error || "Failed to load emails"
-              }</div>`;
-              return;
-            }
-            const recips = res.recipients || [];
-            renderEmails(recips);
-          })
-          .catch((err) => {
-            document.getElementById(
-              "emailsMsg"
-            ).innerHTML = `<div class="result-box result-error">❌ ${err.message}</div>`;
-          });
-      }
-
-      function renderEmails(list) {
-        const wrap = document.getElementById("emailsList");
-        if (!wrap) return;
-        if (!list.length) {
-          wrap.innerHTML =
-            '<div style="color:#c0c0c0;">No recipients configured.</div>';
-          return;
-        }
-        wrap.innerHTML = list
-          .map((obj) => {
-            const e = obj.email || "";
-            const p = obj.prefs || {};
-            const f = !!p.failed,
-              ps = !!p.passed,
-              nc = !!p.non_compliant;
-            const key = e.replace(/'/g, "\\'");
-            return `
-        <div class="email-row">
-          <div class="email-text">${e}</div>
-          <div style="display:flex; align-items:center; gap:12px; color:#c0c0c0;">
-            <label><input type="checkbox" ${
-              f ? "checked" : ""
-            } onchange="togglePref('${key}','failed', this.checked)"> Failed</label>
-            <label><input type="checkbox" ${
-              ps ? "checked" : ""
-            } onchange="togglePref('${key}','passed', this.checked)"> Passed</label>
-            <label><input type="checkbox" ${
-              nc ? "checked" : ""
-            } onchange="togglePref('${key}','non_compliant', this.checked)"> Non-compliant</label>
-          </div>
-          <div class="email-actions">
-            <button class="small-btn" onclick="removeEmail('${key}')">Remove</button>
-          </div>
-        </div>`;
-          })
-          .join("");
-      }
-
-      function togglePref(email, key, val) {
-        document.getElementById("emailsMsg").innerHTML =
-          '<div class="result-box">Saving...</div>';
-        fetch("/api/admin/emails", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, prefs: { [key]: !!val } }),
-        })
-          .then((r) => r.json())
-          .then((res) => {
-            if (res.success) {
-              document.getElementById("emailsMsg").innerHTML =
-                '<div class="result-box result-success">✅ Saved</div>';
-              // Re-fetch to ensure UI reflects the latest persisted state
-              fetchEmails();
-            } else {
-              document.getElementById(
-                "emailsMsg"
-              ).innerHTML = `<div class="result-box result-error">❌ ${
-                res.error || "Failed to save"
-              }</div>`;
-            }
-          })
-          .catch((err) => {
-            document.getElementById(
-              "emailsMsg"
-            ).innerHTML = `<div class="result-box result-error">❌ ${err.message}</div>`;
-          });
-      }
-
-      function addEmail() {
-        const input = document.getElementById("newEmail");
-        const val = (input.value || "").trim();
-        if (!val) return;
-        document.getElementById("emailsMsg").innerHTML =
-          '<div class="result-box">Saving...</div>';
-        fetch("/api/admin/emails", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ add: { email: val } }),
-        })
-          .then((r) => r.json())
-          .then((res) => {
-            if (res.success) {
-              document.getElementById("emailsMsg").innerHTML =
-                '<div class="result-box result-success">✅ Added</div>';
-              input.value = "";
-              fetchEmails();
-            } else {
-              document.getElementById(
-                "emailsMsg"
-              ).innerHTML = `<div class="result-box result-error">❌ ${
-                res.error || "Failed to add"
-              }</div>`;
-            }
-          })
-          .catch((err) => {
-            document.getElementById(
-              "emailsMsg"
-            ).innerHTML = `<div class="result-box result-error">❌ ${err.message}</div>`;
-          });
-      }
-
-      function removeEmail(email) {
-        document.getElementById("emailsMsg").innerHTML =
-          '<div class="result-box">Saving...</div>';
-        fetch("/api/admin/emails", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ remove: email }),
-        })
-          .then((r) => r.json())
-          .then((res) => {
-            if (res.success) {
-              document.getElementById("emailsMsg").innerHTML =
-                '<div class="result-box result-success">✅ Removed</div>';
-              fetchEmails();
-            } else {
-              document.getElementById(
-                "emailsMsg"
-              ).innerHTML = `<div class="result-box result-error">❌ ${
-                res.error || "Failed to remove"
-              }</div>`;
-            }
-          })
-          .catch((err) => {
-            document.getElementById(
-              "emailsMsg"
-            ).innerHTML = `<div class="result-box result-error">❌ ${err.message}</div>`;
-          });
-      }
-
-      // --- Overrides Manager ---
-      let ovMembers = [];
-
-      function loadOverrides() {
-        // Fetch members + current override flags
-        Promise.all([
-          fetch("/api/admin/members")
-            .then((r) => r.json())
-            .catch(() => ({ success: false, members: [] })),
-          fetch("/api/overrides")
-            .then((r) => r.json())
-            .catch(() => ({ success: false, overrides: {} })),
-        ]).then(([mRes, oRes]) => {
-          if (!mRes.success) {
-            document.getElementById(
-              "ovMsg"
-            ).innerHTML = `<div class="result-box result-error">❌ ${
-              mRes.error || "Failed to load members"
-            }</div>`;
-            ovMembers = [];
-            renderOverrides();
-            return;
-          }
-          const overrides = (oRes && oRes.overrides) || {};
-          ovMembers = mRes.members.map((m) => ({
-            name: m.name,
-            overrides: {
-              week_1:
-                overrides[m.name] && "week_1" in overrides[m.name]
-                  ? overrides[m.name].week_1
-                  : "week_1" in (m.overrides || {})
-                  ? m.overrides.week_1
-                  : null,
-              month_1:
-                overrides[m.name] && "month_1" in overrides[m.name]
-                  ? overrides[m.name].month_1
-                  : "month_1" in (m.overrides || {})
-                  ? m.overrides.month_1
-                  : null,
-              month_3:
-                overrides[m.name] && "month_3" in overrides[m.name]
-                  ? overrides[m.name].month_3
-                  : "month_3" in (m.overrides || {})
-                  ? m.overrides.month_3
-                  : null,
-            },
-          }));
-          renderOverrides();
-        });
-      }
-
-      function renderOverrides() {
-        const grid = document.getElementById("ovGrid");
-        if (!grid) return;
-        const filter = (
-          document.getElementById("ovFilter")?.value || ""
-        ).toLowerCase();
-        let html = `
-        <div class="head">Member</div>
-        <div class="head ov-check">Week 1</div>
-        <div class="head ov-check">Month 1</div>
-        <div class="head ov-check">Month 3</div>
-        <div class="head ov-actions">Actions</div>
-      `;
-        const rows = ovMembers.filter(
-          (m) => !filter || m.name.toLowerCase().includes(filter)
-        );
-        rows.forEach((m) => {
-          const w = m.overrides.week_1;
-          const m1 = m.overrides.month_1;
-          const m3 = m.overrides.month_3;
-          const mk = (member, key, val) => {
-            const n = member.replace(/'/g, "\\'");
-            const noneActive =
-              val === null || val === undefined ? "active" : "";
-            const passActive = val === true ? "active" : "";
-            const failActive = val === false ? "active" : "";
-            const label =
-              key === "week_1"
-                ? "Week 1"
-                : key === "month_1"
-                ? "Month 1"
-                : "Month 3";
-            return `
-            <div class="tri-toggle" role="group" aria-label="Override ${label}">
-              <button type="button" class="opt-none ${noneActive}" onclick="setOverride('${n}', '${key}', '')">None</button>
-              <button type="button" class="opt-pass ${passActive}" onclick="setOverride('${n}', '${key}', 'true')">Pass</button>
-              <button type="button" class="opt-fail ${failActive}" onclick="setOverride('${n}', '${key}', 'false')">Fail</button>
-            </div>
-          `;
-          };
-          html += `
-          <div class="ov-name">${m.name}</div>
-          <div class="ov-check">${mk(m.name, "week_1", w)}</div>
-          <div class="ov-check">${mk(m.name, "month_1", m1)}</div>
-          <div class="ov-check">${mk(m.name, "month_3", m3)}</div>
-          <div class="ov-actions">
-            <button class="small-btn" onclick="clearOverrides('${m.name.replace(
-              /'/g,
-              "\\'"
-            )}')">Clear</button>
-          </div>
-        `;
-        });
-        grid.innerHTML = html;
-      }
-
-      function setOverride(member, key, value) {
-        const m = ovMembers.find((x) => x.name === member);
-        if (!m) return;
-        let v = null;
-        if (value === "true") v = true;
-        else if (value === "false") v = false;
-        else v = null;
-        m.overrides[key] = v;
-        saveMemberOverrides(member, m.overrides);
-      }
-
-      function clearOverrides(member) {
-        const m = ovMembers.find((x) => x.name === member);
-        if (!m) return;
-        m.overrides = { week_1: null, month_1: null, month_3: null };
-        saveMemberOverrides(member, m.overrides, true);
-        renderOverrides();
-      }
-
-      function saveMemberOverrides(member, overrides, clear = false) {
-        const msg = document.getElementById("ovMsg");
-        msg.innerHTML = '<div class="result-box">Saving...</div>';
-        fetch("/api/overrides", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ member, overrides, remove: !!clear }),
-        })
-          .then((r) => r.json())
-          .then((res) => {
-            if (res.success) {
-              msg.innerHTML =
-                '<div class="result-box result-success">✅ Saved</div>';
-              // Reload to reflect any server-side normalization
-              loadOverrides();
-            } else {
-              msg.innerHTML = `<div class="result-box result-error">❌ ${
-                res.error || "Failed to save"
-              }</div>`;
-            }
-          })
-          .catch((err) => {
-            msg.innerHTML = `<div class="result-box result-error">❌ ${err.message}</div>`;
-          });
-      }
-
-      // Initialize page
-      document.addEventListener("DOMContentLoaded", function () {
-        createParticles();
-        loadNotificationStatus();
-        fetchEmails();
-        loadOverrides();
+    input.addEventListener("input", () => {
+      const q = (input.value || "").trim().toLowerCase();
+      grid.querySelectorAll(".ov-row").forEach((row) => {
+        const name = row.getAttribute("data-name") || "";
+        row.classList.toggle("hidden", q && !name.includes(q));
       });
-    </script>
-  </body>
-</html>
+    });
+  })();
+</script>
+{% endblock %}
