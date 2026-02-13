@@ -1,6 +1,6 @@
 {% extends "base.html" %} {% block title %}I.B.U. Team Info{% endblock %} {%
 block head %} {{ super() }}
-<!-- jQuery and jQuery UI for custom datepicker -->
+
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <link
@@ -8,15 +8,13 @@ block head %} {{ super() }}
   href="https://code.jquery.com/ui/1.13.2/themes/ui-lightness/jquery-ui.css"
 />
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts@5.3.6"></script>
 
 <link
   rel="icon"
   type="image/svg+xml"
   href="{{ url_for('static', filename='ibu-icon.svg') }}"
 />
-
 {% endblock %} {% block content %}
 <div class="mx-auto w-full max-w-6xl px-4 py-6">
   <!-- Header -->
@@ -131,8 +129,6 @@ block head %} {{ super() }}
 </div>
 <script>
   (() => {
-    Chart.register(ChartDataLabels);
-
     const el = {
       container: document.getElementById("pointsPieChart"),
       selector: document.getElementById("chartSelector"),
@@ -142,41 +138,6 @@ block head %} {{ super() }}
       applyBtn: document.getElementById("applyCustomRange"),
       overlay: document.getElementById("loadingOverlay"),
     };
-
-    const canvas = document.createElement("canvas");
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    el.container.innerHTML = "";
-    el.container.appendChild(canvas);
-
-    // Center text plugin
-    const centerTextPlugin = {
-      id: "centerText",
-      afterDraw(chart, args, opts) {
-        if (!opts?.line1 && !opts?.line2) return;
-        const meta = chart.getDatasetMeta(0);
-        if (!meta?.data?.length) return;
-
-        const { ctx } = chart;
-        const x = meta.data[0].x;
-        const y = meta.data[0].y;
-
-        ctx.save();
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-
-        ctx.font = "600 14px Inter, Arial, sans-serif";
-        ctx.fillStyle = "rgba(226,232,240,0.95)";
-        ctx.fillText(opts.line1 || "", x, y - 10);
-
-        ctx.font = "700 22px Inter, Arial, sans-serif";
-        ctx.fillStyle = "rgba(224,97,80,0.95)";
-        ctx.fillText(opts.line2 || "", x, y + 18);
-
-        ctx.restore();
-      },
-    };
-    Chart.register(centerTextPlugin);
 
     let chart = null;
 
@@ -209,89 +170,142 @@ block head %} {{ super() }}
           ? resp.colors
           : values.map((_, i) => colorForIndex(i));
 
-      const hole = resp.meta?.hole ?? 0.6;
-      const cutout = `${Math.round(Number(hole) * 100)}%`;
-
       const total = resp.meta?.total ?? values.reduce((a, b) => a + b, 0);
-      const active =
-        resp.meta?.active_members ?? values.filter((v) => v > 0).length;
+      const hole = resp.meta?.hole ?? 0.6;
+      const donutSize = `${Math.round(Number(hole) * 100)}%`;
 
-      return { labels, values, colors, cutout, total, active };
+      return { labels, values, colors, total, donutSize };
+    }
+
+    function destroyChart() {
+      if (chart) {
+        chart.destroy();
+        chart = null;
+      }
+      el.container.innerHTML = "";
     }
 
     function renderOrUpdate(ds) {
-      const cfg = {
-        type: "doughnut",
-        data: {
-          labels: ds.labels,
-          datasets: [
-            {
-              data: ds.values,
-              backgroundColor: ds.colors,
-              borderColor: "rgba(255,255,255,0.20)",
-              borderWidth: 1,
-              hoverOffset: 8,
-            },
-          ],
+      const options = {
+        chart: {
+          type: "donut",
+          height: 720,
+          background: "transparent",
+          animations: { enabled: true },
+          toolbar: { show: false },
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: ds.cutout,
-          plugins: {
-            legend: {
-              position: "right",
-              labels: {
-                color: "rgba(226,232,240,0.95)",
-                boxWidth: 14,
-                boxHeight: 14,
-                padding: 12,
-              },
+        series: ds.values,
+        labels: ds.labels,
+        colors: ds.colors,
+        stroke: {
+          show: true,
+          width: 1,
+          colors: ["rgba(255,255,255,0.20)"],
+        },
+        legend: {
+          position: "right",
+          labels: { colors: "rgba(226,232,240,0.95)" },
+          fontSize: "13px",
+          itemMargin: { vertical: 6, horizontal: 10 },
+        },
+        dataLabels: {
+          enabled: true,
+          style: {
+            fontSize: "11px",
+            fontWeight: 600,
+            colors: ["rgba(255,255,255,0.92)"],
+          },
+          dropShadow: { enabled: false },
+          formatter: function (val) {
+            if (val < 2.5) return "";
+            return `${Math.round(val)}%`;
+          },
+        },
+        tooltip: {
+          theme: "dark",
+          y: {
+            formatter: function (value, opts) {
+              const label = opts?.w?.globals?.labels?.[opts.seriesIndex] ?? "";
+              const pct = ds.total ? (value / ds.total) * 100 : 0;
+              return `${label}: ${Number(value).toLocaleString()} (${pct.toFixed(1)}%)`;
             },
-            tooltip: {
-              callbacks: {
-                label: (ctx) => {
-                  const v = ctx.parsed;
-                  const pct = ds.total ? (v / ds.total) * 100 : 0;
-                  return ` ${ctx.label}: ${Number(v).toLocaleString()} (${pct.toFixed(1)}%)`;
+            title: { formatter: () => "" },
+          },
+        },
+        plotOptions: {
+          pie: {
+            donut: {
+              size: ds.donutSize,
+              labels: {
+                show: true,
+                name: {
+                  show: true,
+                  offsetY: -10,
+                  color: "rgba(226,232,240,0.95)",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  formatter: () => "Total Points",
+                },
+                value: {
+                  show: true,
+                  offsetY: 18,
+                  color: "rgba(224,97,80,0.95)",
+                  fontSize: "22px",
+                  fontWeight: 700,
+                  formatter: () => Number(ds.total).toLocaleString(),
+                },
+                total: {
+                  show: false,
                 },
               },
             },
-            datalabels: {
-              color: "rgba(255,255,255,0.92)",
-              font: { weight: "600", size: 11 },
-              formatter: (value) => {
-                const pct = ds.total ? (value / ds.total) * 100 : 0;
-                if (pct < 2.5) return "";
-                return `${pct.toFixed(0)}%`;
-              },
-            },
-            centerText: {
-              line1: "Total Points",
-              line2: Number(ds.total).toLocaleString(),
-            },
           },
         },
+        responsive: [
+          {
+            breakpoint: 640,
+            options: {
+              legend: { position: "bottom" },
+              chart: { height: 520 },
+            },
+          },
+        ],
       };
 
-      if (chart) {
-        chart.data = cfg.data;
-        chart.options = cfg.options;
-        chart.update();
-      } else {
-        chart = new Chart(canvas.getContext("2d"), cfg);
+      if (!chart) {
+        chart = new ApexCharts(el.container, options);
+        chart.render();
+        return;
       }
+
+      chart.updateOptions(
+        {
+          labels: ds.labels,
+          colors: ds.colors,
+          plotOptions: options.plotOptions,
+          legend: options.legend,
+          tooltip: options.tooltip,
+          dataLabels: options.dataLabels,
+          stroke: options.stroke,
+          responsive: options.responsive,
+        },
+        false,
+        true,
+      );
+
+      chart.updateSeries(ds.values, true);
     }
 
     function showError(message) {
+      destroyChart();
       el.container.innerHTML = `
-      <div class="flex h-full min-h-[240px] items-center justify-center text-center">
-        <div class="max-w-lg px-4">
-          <div class="text-sm font-semibold text-slate-100">Chart error</div>
-          <div class="mt-2 text-sm text-slate-300">${message}</div>
+        <div class="flex h-full min-h-[240px] items-center justify-center text-center">
+          <div class="max-w-lg px-4">
+            <div class="text-sm font-semibold text-slate-100">Chart error</div>
+            <div class="mt-2 text-sm text-slate-300">${message}</div>
+          </div>
         </div>
-      </div>
-    `;
+      `;
     }
 
     async function fetchRange(type, startISO, endISO) {
@@ -311,10 +325,6 @@ block head %} {{ super() }}
     async function loadAndRender(type, startISO, endISO) {
       showLoading(true);
       try {
-        if (!el.container.contains(canvas)) {
-          el.container.innerHTML = "";
-          el.container.appendChild(canvas);
-        }
         const resp = await fetchRange(type, startISO, endISO);
         const ds = normalize(resp);
         renderOrUpdate(ds);
