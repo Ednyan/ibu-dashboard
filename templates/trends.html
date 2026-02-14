@@ -5,333 +5,442 @@ content %}
   <header
     class="rounded-2xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
   >
-    <div
-      class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div>
-        <h1 class="text-xl font-semibold tracking-wide text-white">Trends</h1>
-        <p class="mt-1 text-sm text-white/70">
-          Data from {{ time_ago }} ({{ latest_date }})
-        </p>
+    <div class="flex flex-col gap-4">
+      <div
+        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div>
+          <h1 class="text-xl font-semibold tracking-wide text-white">Trends</h1>
+          <p class="mt-1 text-sm text-white/70">
+            Data from {{ time_ago }} ({{ latest_date }})
+          </p>
+        </div>
+      </div>
+
+      <!-- Dropdown bar -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- Chart Type -->
+        <details class="relative dd">
+          <summary
+            class="list-none cursor-pointer select-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Chart
+          </summary>
+          <div
+            class="absolute left-0 z-50 mt-2 w-88 rounded-2xl border border-white/10 bg-neutral-900 shadow-xl"
+          >
+            <div class="p-4">
+              <div class="text-xs font-semibold text-white/70">Chart Type</div>
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <label
+                  class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
+                >
+                  <input type="radio" name="chartType" value="line" checked />
+                  <span>Line</span>
+                </label>
+                <label
+                  class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
+                >
+                  <input type="radio" name="chartType" value="bar" />
+                  <span>Bar</span>
+                </label>
+              </div>
+
+              <div id="fillLinesWrapper" class="mt-2">
+                <label class="flex items-center gap-2 text-xs text-white/70">
+                  <input type="checkbox" id="fillLinesToggle" checked />
+                  <span>Fill Lines</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Value Mode -->
+        <details class="relative dd">
+          <summary
+            class="list-none cursor-pointer select-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Value
+          </summary>
+          <div
+            class="absolute left-0 z-50 mt-2 w-88 rounded-2xl border border-white/10 bg-neutral-900 shadow-xl"
+          >
+            <div class="p-4">
+              <div class="text-xs font-semibold text-white/70">Value Mode</div>
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <label
+                  class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
+                >
+                  <input type="radio" name="valueMode" value="cumulative" />
+                  <span>Cumulative</span>
+                </label>
+                <label
+                  class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
+                >
+                  <input
+                    type="radio"
+                    name="valueMode"
+                    value="interval"
+                    checked
+                  />
+                  <span>Interval</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Hover -->
+        <details class="relative dd">
+          <summary
+            class="list-none cursor-pointer select-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Hover
+          </summary>
+          <div
+            class="absolute left-0 z-50 mt-2 w-88 rounded-2xl border border-white/10 bg-neutral-900 shadow-xl"
+          >
+            <div class="p-4">
+              <div class="text-xs font-semibold text-white/70">Hover</div>
+              <div class="mt-2 grid grid-cols-3 gap-2">
+                <label
+                  class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs text-white/90"
+                >
+                  <input type="radio" name="hoverMode" value="x" />
+                  <span>Separate</span>
+                </label>
+                <label
+                  class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs text-white/90"
+                >
+                  <input
+                    type="radio"
+                    name="hoverMode"
+                    value="x unified"
+                    checked
+                  />
+                  <span>Unified</span>
+                </label>
+                <label
+                  class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs text-white/90"
+                >
+                  <input type="radio" name="hoverMode" value="closest" />
+                  <span>Closest</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Time + Date Range -->
+        <details class="relative dd">
+          <summary
+            class="list-none cursor-pointer select-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Time
+          </summary>
+          <div
+            class="absolute left-0 z-50 mt-2 w-104 rounded-2xl border border-white/10 bg-neutral-900 shadow-xl"
+          >
+            <div class="p-4">
+              <div>
+                <div class="text-xs font-semibold text-white/70">
+                  Date Range
+                </div>
+
+                <div class="mt-2 grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="text-xs text-white/50">Start</label>
+                    <input
+                      id="startDate"
+                      type="date"
+                      class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 py-2 px-3 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="text-xs text-white/50">End</label>
+                    <input
+                      id="endDate"
+                      type="date"
+                      class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 py-2 px-3 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
+                    />
+                  </div>
+
+                  <button
+                    id="applyDateRange"
+                    class="col-span-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15"
+                    type="button"
+                  >
+                    Apply
+                  </button>
+                </div>
+
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <button
+                    class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
+                    data-range="1m"
+                    type="button"
+                  >
+                    1M
+                  </button>
+                  <button
+                    class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
+                    data-range="3m"
+                    type="button"
+                  >
+                    3M
+                  </button>
+                  <button
+                    class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
+                    data-range="6m"
+                    type="button"
+                  >
+                    6M
+                  </button>
+                  <button
+                    class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
+                    data-range="1y"
+                    type="button"
+                  >
+                    1Y
+                  </button>
+                  <button
+                    class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
+                    data-range="all"
+                    type="button"
+                  >
+                    All
+                  </button>
+                </div>
+              </div>
+
+              <div class="mt-4 border-t border-white/10 pt-4"></div>
+
+              <div>
+                <div class="text-xs font-semibold text-white/70">
+                  Time Period
+                </div>
+
+                <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
+                  <label
+                    class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
+                  >
+                    <input
+                      type="radio"
+                      name="timePeriod"
+                      value="daily"
+                      checked
+                    />
+                    <span>Daily</span>
+                  </label>
+
+                  <label
+                    class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
+                  >
+                    <input type="radio" name="timePeriod" value="weekly" />
+                    <span>Weekly</span>
+                  </label>
+
+                  <label
+                    class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
+                  >
+                    <input type="radio" name="timePeriod" value="monthly" />
+                    <span>Monthly</span>
+                  </label>
+
+                  <label
+                    class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
+                  >
+                    <input type="radio" name="timePeriod" value="yearly" />
+                    <span>Yearly</span>
+                  </label>
+
+                  <label
+                    class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
+                  >
+                    <input type="radio" name="timePeriod" value="90_days" />
+                    <span>90 Days</span>
+                  </label>
+
+                  <label
+                    class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
+                  >
+                    <input type="radio" name="timePeriod" value="180_days" />
+                    <span>180 Days</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Teams + Users -->
+        <details class="relative dd">
+          <summary
+            class="list-none cursor-pointer select-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Teams & Users
+          </summary>
+          <div
+            class="absolute left-0 z-50 mt-2 w-120 rounded-2xl border border-white/10 bg-neutral-900 shadow-xl"
+          >
+            <div class="max-h-[70vh] overflow-auto p-4">
+              <!-- Teams -->
+              <div>
+                <div class="text-xs font-semibold text-white/70">
+                  Teams (Top 150)
+                </div>
+                <input
+                  id="teamSearch"
+                  type="text"
+                  placeholder="Search teams..."
+                  class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 py-3 px-4 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
+                />
+                <div class="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    id="enableAllTeams"
+                    class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
+                  >
+                    Enable All
+                  </button>
+                  <button
+                    type="button"
+                    id="disableAllTeams"
+                    class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
+                  >
+                    Disable All
+                  </button>
+                </div>
+
+                <div
+                  id="teamDropdown"
+                  class="mt-3 max-h-64 overflow-auto rounded-xl border border-white/10 bg-white/5"
+                ></div>
+
+                <div id="teamMetricWrapper" class="mt-3 hidden">
+                  <label class="text-xs text-white/50">Team Metric</label>
+                  <select
+                    id="teamMetric"
+                    class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
+                  >
+                    <option value="total_points" selected>Total Points</option>
+                    <option value="members">Members</option>
+                    <option value="90_days">90 Days</option>
+                    <option value="180_days">180 Days</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="my-4 border-t border-white/10"></div>
+
+              <!-- Users / Series -->
+              <div>
+                <div class="text-xs font-semibold text-white/70">
+                  Data Series
+                </div>
+
+                <input
+                  id="memberSearch"
+                  type="text"
+                  placeholder="Search members..."
+                  class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 py-3 px-4 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
+                />
+
+                <div class="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    id="enableAllMembers"
+                    class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
+                  >
+                    Enable All
+                  </button>
+                  <button
+                    type="button"
+                    id="disableAllMembers"
+                    class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
+                  >
+                    Disable All
+                  </button>
+                </div>
+
+                <div
+                  id="memberDropdown"
+                  class="mt-3 max-h-64 overflow-auto rounded-xl border border-white/10 bg-white/5"
+                >
+                  <div
+                    class="px-3 py-2 text-sm text-white/90 border-b border-white/10"
+                  >
+                    <label class="flex items-center justify-between gap-3">
+                      <span class="flex items-center gap-2 min-w-0">
+                        <input type="checkbox" value="total" checked />
+                        <span class="truncate">📊 Total Team Points</span>
+                      </span>
+                      <span class="text-xs text-white/40">total</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div
+                  id="selectedSeries"
+                  class="mt-3 flex flex-wrap gap-2"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Predictions -->
+        <details class="relative dd">
+          <summary
+            class="list-none cursor-pointer select-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90 hover:bg-white/10"
+          >
+            Predictions
+          </summary>
+          <div
+            class="absolute left-0 z-50 mt-2 w-88 rounded-2xl border border-white/10 bg-neutral-900 shadow-xl"
+          >
+            <div class="p-4">
+              <div class="flex items-center justify-between">
+                <div class="text-xs font-semibold text-white/70">
+                  Predictions
+                </div>
+                <label class="flex items-center gap-2 text-xs text-white/70">
+                  <input type="checkbox" id="enablePredictions" />
+                  <span>Enable</span>
+                </label>
+              </div>
+
+              <div id="predictionOptions" class="mt-3 hidden">
+                <label class="text-xs text-white/50">Method</label>
+                <select
+                  id="predictionMethod"
+                  class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
+                >
+                  <option value="linear">Linear Regression</option>
+                  <option value="moving_average">Moving Average</option>
+                </select>
+
+                <label class="mt-3 block text-xs text-white/50">Days</label>
+                <input
+                  id="predictionDays"
+                  type="number"
+                  value="30"
+                  min="7"
+                  max="365"
+                  class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
+                />
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
     </div>
   </header>
 
-  <!-- Controls + Chart -->
-  <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-    <!-- Controls -->
-    <aside class="lg:col-span-4">
-      <div
-        class="rounded-2xl border border-white/10 bg-neutral-800 p-4 backdrop-blur-2xl"
-      >
-        <!-- Chart type -->
-        <div class="border-b border-white/10 pb-4">
-          <div class="text-xs font-semibold text-white/70">Chart Type</div>
-          <div class="mt-2 grid grid-cols-2 gap-2">
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
-            >
-              <input type="radio" name="chartType" value="line" checked />
-              <span>Line</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
-            >
-              <input type="radio" name="chartType" value="bar" />
-              <span>Bar</span>
-            </label>
-          </div>
-
-          <div id="fillLinesWrapper" class="mt-2">
-            <label class="flex items-center gap-2 text-xs text-white/70">
-              <input type="checkbox" id="fillLinesToggle" checked />
-              <span>Fill Lines</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Value mode -->
-        <div class="border-b border-white/10 py-4">
-          <div class="text-xs font-semibold text-white/70">Value Mode</div>
-          <div class="mt-2 grid grid-cols-2 gap-2">
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
-            >
-              <input type="radio" name="valueMode" value="cumulative" />
-              <span>Cumulative</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/90"
-            >
-              <input type="radio" name="valueMode" value="interval" checked />
-              <span>Interval</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Hover -->
-        <div class="border-b border-white/10 py-4">
-          <div class="text-xs font-semibold text-white/70">Hover</div>
-          <div class="mt-2 grid grid-cols-3 gap-2">
-            <label
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs text-white/90"
-            >
-              <input type="radio" name="hoverMode" value="x" />
-              <span>Separate</span>
-            </label>
-            <label
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs text-white/90"
-            >
-              <input type="radio" name="hoverMode" value="x unified" checked />
-              <span>Unified</span>
-            </label>
-            <label
-              class="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2 py-2 text-xs text-white/90"
-            >
-              <input type="radio" name="hoverMode" value="closest" />
-              <span>Closest</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Time period -->
-        <div class="border-b border-white/10 py-4">
-          <div class="text-xs font-semibold text-white/70">Time Period</div>
-          <div class="mt-2 grid grid-cols-2 gap-2 text-sm">
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
-            >
-              <input type="radio" name="timePeriod" value="daily" checked />
-              <span>Daily</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
-            >
-              <input type="radio" name="timePeriod" value="weekly" />
-              <span>Weekly</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
-            >
-              <input type="radio" name="timePeriod" value="monthly" />
-              <span>Monthly</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
-            >
-              <input type="radio" name="timePeriod" value="yearly" />
-              <span>Yearly</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
-            >
-              <input type="radio" name="timePeriod" value="90_days" />
-              <span>90 Days</span>
-            </label>
-            <label
-              class="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/90"
-            >
-              <input type="radio" name="timePeriod" value="180_days" />
-              <span>180 Days</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Date range -->
-        <div class="border-b border-white/10 py-4">
-          <div class="text-xs font-semibold text-white/70">Date Range</div>
-          <div class="mt-2 grid grid-cols-2 gap-2">
-            <div>
-              <label class="text-xs text-white/50">Start</label>
-              <input
-                id="startDate"
-                type="date"
-                class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 py-2 px-3 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
-              />
-            </div>
-            <div>
-              <label class="text-xs text-white/50">End</label>
-              <input
-                id="endDate"
-                type="date"
-                class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 py-2 px-3 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
-              />
-            </div>
-            <button
-              id="applyDateRange"
-              class="col-span-2 rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/15"
-            >
-              Apply
-            </button>
-          </div>
-
-          <div class="mt-2 flex flex-wrap gap-2">
-            <button
-              class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
-              data-range="1m"
-            >
-              1M
-            </button>
-            <button
-              class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
-              data-range="3m"
-            >
-              3M
-            </button>
-            <button
-              class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
-              data-range="6m"
-            >
-              6M
-            </button>
-            <button
-              class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
-              data-range="1y"
-            >
-              1Y
-            </button>
-            <button
-              class="mini-btn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-white/80 hover:bg-white/10"
-              data-range="all"
-            >
-              All
-            </button>
-          </div>
-        </div>
-        <!-- Teams -->
-        <div class="border-t border-white/10 pt-4">
-          <div class="text-xs font-semibold text-white/70">Teams (Top 150)</div>
-
-          <input
-            id="teamSearch"
-            type="text"
-            placeholder="Search teams..."
-            class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 py-3 px-4 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
-          />
-
-          <div class="mt-2 flex gap-2">
-            <button
-              type="button"
-              id="enableAllTeams"
-              class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
-            >
-              Enable All
-            </button>
-            <button
-              type="button"
-              id="disableAllTeams"
-              class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
-            >
-              Disable All
-            </button>
-          </div>
-
-          <!-- teams dropdown list -->
-          <div
-            id="teamDropdown"
-            class="mt-3 max-h-64 overflow-auto rounded-xl border border-white/10 bg-white/5"
-          ></div>
-
-          <!-- Team metric (only relevant when at least 1 team is selected) -->
-          <div id="teamMetricWrapper" class="mt-3 hidden">
-            <label class="text-xs text-white/50">Team Metric</label>
-            <select
-              id="teamMetric"
-              class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
-            >
-              <option value="total_points" selected>Total Points</option>
-              <option value="members">Members</option>
-              <option value="90_days">90 Days</option>
-              <option value="180_days">180 Days</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Series -->
-        <div class="py-4">
-          <div class="text-xs font-semibold text-white/70">Data Series</div>
-
-          <input
-            id="memberSearch"
-            type="text"
-            placeholder="Search members..."
-            class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 py-3 px-4 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:bg-white/10"
-          />
-
-          <div class="mt-2 flex gap-2">
-            <button
-              type="button"
-              id="enableAllMembers"
-              class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
-            >
-              Enable All
-            </button>
-            <button
-              type="button"
-              id="disableAllMembers"
-              class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/80 hover:bg-white/10"
-            >
-              Disable All
-            </button>
-          </div>
-
-          <!-- dropdown list -->
-          <div
-            id="memberDropdown"
-            class="mt-3 max-h-64 overflow-auto rounded-xl border border-white/10 bg-white/5"
-          >
-            <div
-              class="px-3 py-2 text-sm text-white/90 border-b border-white/10"
-            >
-              <label class="flex items-center justify-between gap-3">
-                <span class="flex items-center gap-2 min-w-0">
-                  <input type="checkbox" value="total" checked />
-                  <span class="truncate">📊 Total Team Points</span>
-                </span>
-                <span class="text-xs text-white/40">total</span>
-              </label>
-            </div>
-          </div>
-
-          <div id="selectedSeries" class="mt-3 flex flex-wrap gap-2"></div>
-        </div>
-
-        <!-- Predictions -->
-        <div class="border-t border-white/10 pt-4">
-          <div class="flex items-center justify-between">
-            <div class="text-xs font-semibold text-white/70">Predictions</div>
-            <label class="flex items-center gap-2 text-xs text-white/70">
-              <input type="checkbox" id="enablePredictions" />
-              <span>Enable</span>
-            </label>
-          </div>
-
-          <div id="predictionOptions" class="mt-3 hidden">
-            <label class="text-xs text-white/50">Method</label>
-            <select
-              id="predictionMethod"
-              class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
-            >
-              <option value="linear">Linear Regression</option>
-              <option value="moving_average">Moving Average</option>
-            </select>
-
-            <label class="mt-3 block text-xs text-white/50">Days</label>
-            <input
-              id="predictionDays"
-              type="number"
-              value="30"
-              min="7"
-              max="365"
-              class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:bg-white/10"
-            />
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- Chart -->
-    <main class="lg:col-span-8">
+  <div class="mt-4">
+    <main>
       <div
         class="overflow-hidden rounded-2xl border border-white/10 bg-neutral-800 backdrop-blur-2xl"
       >
@@ -348,7 +457,7 @@ content %}
 
         <div class="relative p-4">
           <div class="h-[360px] sm:h-[420px]">
-            <canvas id="trendsCanvas"></canvas>
+            <div id="trendsChart" class="w-full h-full"></div>
           </div>
 
           <div
@@ -379,10 +488,7 @@ content %}
   </div>
 </div>
 
-<!-- Chart.js + date adapter -->
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <script>
   let availableMembers = [];
@@ -390,17 +496,60 @@ content %}
 
   let selectedSeries = new Set(["total"]);
   let earliestDate = null;
+
   let chart = null;
 
+  let activeController = null;
+  let requestSeq = 0;
+
   document.addEventListener("DOMContentLoaded", () => {
+    setupDetailsDropdowns();
     initDates();
+    bindEvents();
+
     fetchMembers();
     fetchTeams();
-    bindEvents();
+
     updateSelectedTags();
     enforceChartConstraints();
+    updateTeamMetricVisibility();
     updateChart();
   });
+
+  // UI helpers
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  function setupDetailsDropdowns(selector = "details.dd") {
+    const dropdowns = Array.from(document.querySelectorAll(selector));
+
+    function closeAll(except = null) {
+      dropdowns.forEach((d) => {
+        if (d !== except) d.removeAttribute("open");
+      });
+    }
+
+    dropdowns.forEach((d) => {
+      d.addEventListener("toggle", () => {
+        if (d.open) closeAll(d);
+      });
+
+      const summary = d.querySelector("summary");
+      const panel = summary?.nextElementSibling;
+      panel?.addEventListener("click", (e) => e.stopPropagation());
+      panel?.addEventListener("mousedown", (e) => e.stopPropagation());
+    });
+
+    document.addEventListener("click", (e) => {
+      const clickedInside = dropdowns.some((d) => d.contains(e.target));
+      if (!clickedInside) closeAll();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeAll();
+    });
+  }
 
   function fmt(d) {
     return d.toISOString().split("T")[0];
@@ -409,32 +558,72 @@ content %}
   function initDates() {
     const end = new Date();
     const start = new Date("2023-09-01T00:00:00");
-    document.getElementById("endDate").value = fmt(end);
-    document.getElementById("startDate").value = fmt(start);
+    $("endDate").value = fmt(end);
+    $("startDate").value = fmt(start);
   }
 
   function formatCompact(n) {
     if (n == null || isNaN(n)) return "0";
-    const abs = Math.abs(n);
+    const abs = Math.abs(Number(n));
     if (abs >= 1_000_000) return Math.floor(abs / 1_000_000) + " M";
     if (abs >= 1_000) return Math.floor(abs / 1_000) + "k";
     return "" + abs;
   }
 
+  function debounce(fn, delay = 140) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  function getRadioVal(name) {
+    return document.querySelector(`input[name="${name}"]:checked`)?.value;
+  }
+
+  function enforceChartConstraints() {
+    const isLine = getRadioVal("chartType") === "line";
+    $("fillLinesWrapper").style.display = isLine ? "block" : "none";
+  }
+
+  function toggleLoading(show) {
+    $("loadingSpinner").classList.toggle("hidden", !show);
+  }
+  function toggleEmpty(show) {
+    $("emptyState").classList.toggle("hidden", !show);
+  }
+
+  function setQuickRange(r) {
+    const end = new Date();
+    let start = new Date();
+    if (r === "1m") start.setMonth(end.getMonth() - 1);
+    else if (r === "3m") start.setMonth(end.getMonth() - 3);
+    else if (r === "6m") start.setMonth(end.getMonth() - 6);
+    else if (r === "1y") start.setFullYear(end.getFullYear() - 1);
+    else if (r === "all" && earliestDate)
+      start = new Date(earliestDate + "T00:00:00");
+
+    $("endDate").value = fmt(end);
+    $("startDate").value = fmt(start);
+    updateChart();
+  }
+
+  // Events
   function bindEvents() {
-    document
-      .getElementById("enableAllTeams")
-      .addEventListener("click", enableAllTeams);
-    document
-      .getElementById("disableAllTeams")
-      .addEventListener("click", disableAllTeams);
+    $("enableAllTeams").addEventListener("click", enableAllTeams);
+    $("disableAllTeams").addEventListener("click", disableAllTeams);
 
-    const teamSearch = document.getElementById("teamSearch");
-    teamSearch.addEventListener("input", () => filterTeams(teamSearch.value));
+    $("teamSearch").addEventListener(
+      "input",
+      debounce(() => filterTeams($("teamSearch").value)),
+    );
+    $("memberSearch").addEventListener(
+      "input",
+      debounce(() => filterMembers($("memberSearch").value)),
+    );
 
-    document
-      .getElementById("teamMetric")
-      .addEventListener("change", updateChart);
+    $("teamMetric").addEventListener("change", updateChart);
 
     document.querySelectorAll('input[name="chartType"]').forEach((r) =>
       r.addEventListener("change", () => {
@@ -453,79 +642,45 @@ content %}
       .querySelectorAll('input[name="hoverMode"]')
       .forEach((r) => r.addEventListener("change", updateChart));
 
+    $("applyDateRange").addEventListener("click", updateChart);
     document
-      .getElementById("applyDateRange")
-      .addEventListener("click", updateChart);
+      .querySelectorAll(".mini-btn[data-range]")
+      .forEach((btn) =>
+        btn.addEventListener("click", () => setQuickRange(btn.dataset.range)),
+      );
 
-    document.querySelectorAll(".mini-btn[data-range]").forEach((btn) => {
-      btn.addEventListener("click", () => setQuickRange(btn.dataset.range));
+    $("fillLinesToggle").addEventListener("change", updateChart);
+
+    $("enablePredictions").addEventListener("change", (e) => {
+      $("predictionOptions").classList.toggle("hidden", !e.target.checked);
+      updateChart();
     });
+    $("predictionMethod").addEventListener("change", updateChart);
+    $("predictionDays").addEventListener("change", updateChart);
 
-    document
-      .getElementById("fillLinesToggle")
-      .addEventListener("change", updateChart);
+    $("enableAllMembers").addEventListener("click", enableAllMembers);
+    $("disableAllMembers").addEventListener("click", disableAllMembers);
 
-    document
-      .getElementById("enablePredictions")
-      .addEventListener("change", (e) => {
-        document
-          .getElementById("predictionOptions")
-          .classList.toggle("hidden", !e.target.checked);
-        updateChart();
-      });
-    document
-      .getElementById("predictionMethod")
-      .addEventListener("change", updateChart);
-    document
-      .getElementById("predictionDays")
-      .addEventListener("change", updateChart);
-
-    document
-      .getElementById("enableAllMembers")
-      .addEventListener("click", enableAllMembers);
-    document
-      .getElementById("disableAllMembers")
-      .addEventListener("click", disableAllMembers);
-
-    const search = document.getElementById("memberSearch");
-    search.addEventListener("input", () => filterMembers(search.value));
-
-    // total checkbox behavior (exists initially)
-    document
-      .querySelector('#memberDropdown input[value="total"]')
-      .addEventListener("change", (e) => {
-        if (e.target.checked) selectedSeries.add("total");
-        else selectedSeries.delete("total");
-        if (selectedSeries.size === 0) selectedSeries.add("total"); // force at least one
-        updateSelectedTags();
-        updateChart();
-      });
+    $("memberDropdown").addEventListener("change", onCheckboxChange);
+    $("teamDropdown").addEventListener("change", onCheckboxChange);
   }
 
-  function enforceChartConstraints() {
-    const isLine =
-      document.querySelector('input[name="chartType"]:checked').value ===
-      "line";
-    document.getElementById("fillLinesWrapper").style.display = isLine
-      ? "block"
-      : "none";
-  }
+  function onCheckboxChange(e) {
+    const cb = e.target;
+    if (!(cb instanceof HTMLInputElement) || cb.type !== "checkbox") return;
 
-  function setQuickRange(r) {
-    const end = new Date();
-    let start = new Date();
-    if (r === "1m") start.setMonth(end.getMonth() - 1);
-    else if (r === "3m") start.setMonth(end.getMonth() - 3);
-    else if (r === "6m") start.setMonth(end.getMonth() - 6);
-    else if (r === "1y") start.setFullYear(end.getFullYear() - 1);
-    else if (r === "all" && earliestDate)
-      start = new Date(earliestDate + "T00:00:00");
+    if (cb.checked) selectedSeries.add(cb.value);
+    else selectedSeries.delete(cb.value);
 
-    document.getElementById("endDate").value = fmt(end);
-    document.getElementById("startDate").value = fmt(start);
+    if (selectedSeries.size === 0) selectedSeries.add("total");
+
+    syncCheckboxes();
+    updateSelectedTags();
+    updateTeamMetricVisibility();
     updateChart();
   }
-  // ---- Teams list ----
+
+  // Teams
   function fetchTeams() {
     fetch("/api/trends/teams")
       .then((r) => r.json())
@@ -539,7 +694,7 @@ content %}
   }
 
   function populateTeamDropdown() {
-    const dropdown = document.getElementById("teamDropdown");
+    const dropdown = $("teamDropdown");
     dropdown.innerHTML = "";
 
     availableTeams.forEach((t) => {
@@ -552,25 +707,14 @@ content %}
       row.dataset.name = teamName.toLowerCase();
 
       row.innerHTML = `
-      <label class="flex items-center justify-between gap-3" title="${teamName} • ${Number(t.total_points || 0).toLocaleString()} pts">
-        <span class="flex items-center gap-2 min-w-0">
-          <input type="checkbox" value="${seriesValue}">
-          <span class="truncate">${teamName}</span>
-        </span>
-        <span class="text-xs text-white/40 whitespace-nowrap">${formatCompact(t.total_points)} pts</span>
-      </label>
-    `;
-
-      row.querySelector("input").addEventListener("change", (e) => {
-        if (e.target.checked) selectedSeries.add(e.target.value);
-        else selectedSeries.delete(e.target.value);
-
-        if (selectedSeries.size === 0) selectedSeries.add("total");
-        syncCheckboxes();
-        updateSelectedTags();
-        updateTeamMetricVisibility();
-        updateChart();
-      });
+        <label class="flex items-center justify-between gap-3" title="${teamName} • ${Number(t.total_points || 0).toLocaleString()} pts">
+          <span class="flex items-center gap-2 min-w-0">
+            <input type="checkbox" value="${seriesValue}">
+            <span class="truncate">${teamName}</span>
+          </span>
+          <span class="text-xs text-white/40 whitespace-nowrap">${formatCompact(t.total_points)} pts</span>
+        </label>
+      `;
 
       dropdown.appendChild(row);
     });
@@ -590,6 +734,7 @@ content %}
 
   function enableAllTeams() {
     availableTeams.forEach((t) => selectedSeries.add(`team:${t.name}`));
+    if (selectedSeries.size === 0) selectedSeries.add("total");
     syncCheckboxes();
     updateSelectedTags();
     updateTeamMetricVisibility();
@@ -597,11 +742,9 @@ content %}
   }
 
   function disableAllTeams() {
-    // remove only team series
     Array.from(selectedSeries).forEach((v) => {
       if (v.startsWith("team:")) selectedSeries.delete(v);
     });
-
     if (selectedSeries.size === 0) selectedSeries.add("total");
     syncCheckboxes();
     updateSelectedTags();
@@ -613,12 +756,11 @@ content %}
     const anyTeam = Array.from(selectedSeries).some((s) =>
       s.startsWith("team:"),
     );
-    document
-      .getElementById("teamMetricWrapper")
-      .classList.toggle("hidden", !anyTeam);
+    $("teamMetricWrapper").classList.toggle("hidden", !anyTeam);
   }
 
-  // ---- Members list ----
+  // Members
+
   function fetchMembers() {
     fetch("/api/trends/members")
       .then((r) => r.json())
@@ -633,39 +775,29 @@ content %}
   }
 
   function populateMemberDropdown() {
-    const dropdown = document.getElementById("memberDropdown");
+    const dropdown = $("memberDropdown");
 
-    // Remove any previous injected member rows (keep the first total row)
-    const totalRow = dropdown.querySelector(":scope > div"); // first child is total row
+    // Keep the first "total" row
+    const totalRow = dropdown.querySelector(":scope > div");
     dropdown.innerHTML = "";
     dropdown.appendChild(totalRow);
 
     availableMembers.forEach((m) => {
+      const name = m.name || "";
       const row = document.createElement("div");
       row.className =
         "px-3 py-2 text-sm text-white/90 border-b border-white/10 member-row";
-      row.dataset.name = (m.name || "").toLowerCase();
+      row.dataset.name = name.toLowerCase();
 
       row.innerHTML = `
-        <label class="flex items-center justify-between gap-3" title="${m.name} • ${Number(m.current_points || 0).toLocaleString()} pts">
+        <label class="flex items-center justify-between gap-3" title="${name} • ${Number(m.current_points || 0).toLocaleString()} pts">
           <span class="flex items-center gap-2 min-w-0">
-            <input type="checkbox" value="${m.name}">
-            <span class="truncate">${m.name}</span>
+            <input type="checkbox" value="${name}">
+            <span class="truncate">${name}</span>
           </span>
           <span class="text-xs text-white/40 whitespace-nowrap">${formatCompact(m.current_points)} pts</span>
         </label>
       `;
-
-      row.querySelector("input").addEventListener("change", (e) => {
-        if (e.target.checked) selectedSeries.add(e.target.value);
-        else selectedSeries.delete(e.target.value);
-
-        if (selectedSeries.size === 0) selectedSeries.add("total"); // force at least one
-        syncCheckboxes();
-        updateSelectedTags();
-        updateChart();
-      });
-
       dropdown.appendChild(row);
     });
 
@@ -691,7 +823,7 @@ content %}
 
   function disableAllMembers() {
     selectedSeries.clear();
-    selectedSeries.add("total"); // keep at least total
+    selectedSeries.add("total");
     syncCheckboxes();
     updateSelectedTags();
     updateChart();
@@ -703,7 +835,6 @@ content %}
       .forEach((cb) => {
         cb.checked = selectedSeries.has(cb.value);
       });
-
     document
       .querySelectorAll('#teamDropdown input[type="checkbox"]')
       .forEach((cb) => {
@@ -712,7 +843,7 @@ content %}
   }
 
   function updateSelectedTags() {
-    const c = document.getElementById("selectedSeries");
+    const c = $("selectedSeries");
     c.innerHTML = "";
 
     Array.from(selectedSeries).forEach((s) => {
@@ -724,8 +855,10 @@ content %}
       if (s === "total") label = " Total Team Points";
       else if (s.startsWith("team:")) label = " " + s.substring(5);
 
-      tag.innerHTML = `<span class="max-w-[18rem] truncate">${label}</span>
-                       <button class="text-white/60 hover:text-white" aria-label="remove">x</button>`;
+      tag.innerHTML = `
+        <span class="max-w-[18rem] truncate">${label}</span>
+        <button class="text-white/60 hover:text-white" type="button" aria-label="remove">x</button>
+      `;
 
       tag.querySelector("button").addEventListener("click", () => {
         selectedSeries.delete(s);
@@ -740,192 +873,235 @@ content %}
     });
   }
 
-  // ---- Chart.js ----
-  function toggleLoading(show) {
-    document.getElementById("loadingSpinner").classList.toggle("hidden", !show);
-  }
-  function toggleEmpty(show) {
-    document.getElementById("emptyState").classList.toggle("hidden", !show);
+  function updateChartInfo() {
+    const tp = getRadioVal("timePeriod");
+    $("chartInfo").textContent = `${selectedSeries.size} series • ${tp}`;
   }
 
-  function destroyChart() {
+  // ApexCharts
+
+  function tooltipFromHoverMode(mode) {
+    // UI values: "x unified", "closest", "x"
+    if (mode === "x unified") return { shared: true, intersect: false };
+    if (mode === "x") return { shared: false, intersect: false };
+    return { shared: false, intersect: true };
+  }
+
+  function plotlyTracesToApex(traces) {
+    const series = [];
+    const colors = [];
+
+    (traces || []).forEach((t) => {
+      const name = t.name || "Series";
+      const x = t.x || [];
+      const y = t.y || [];
+
+      const data = x.map((xs, i) => {
+        const ts = Date.parse(xs);
+        return { x: isNaN(ts) ? xs : ts, y: y[i] ?? null };
+      });
+
+      series.push({ name, data });
+
+      const c = t?.line?.color || t?.marker?.color;
+      colors.push(c || undefined);
+    });
+
+    const anyColor = colors.some(Boolean);
+    return { series, colors: anyColor ? colors : undefined };
+  }
+
+  function maybeDisableSharedTooltip(tooltipCfg, series) {
+    if (!tooltipCfg.shared) return tooltipCfg;
+    if (!Array.isArray(series) || series.length <= 1) return tooltipCfg;
+
+    const base = (series[0]?.data || []).slice(0, 30).map((p) => p?.x);
+    if (base.length === 0) return tooltipCfg;
+
+    for (let i = 1; i < series.length; i++) {
+      const cur = (series[i]?.data || []).slice(0, 30).map((p) => p?.x);
+      if (cur.length !== base.length)
+        return { shared: false, intersect: false };
+      for (let j = 0; j < base.length; j++) {
+        if (cur[j] !== base[j]) return { shared: false, intersect: false };
+      }
+    }
+    return tooltipCfg;
+  }
+
+  function buildApexOptions({
+    chartType,
+    fillLines,
+    yTitle,
+    hoverMode,
+    series,
+    colors,
+  }) {
+    const baseTooltip = tooltipFromHoverMode(hoverMode);
+    const tooltipCfg = maybeDisableSharedTooltip(baseTooltip, series);
+
+    const apexType = chartType === "bar" ? "bar" : fillLines ? "area" : "line";
+
+    const opts = {
+      chart: {
+        type: apexType,
+        height: "100%",
+        animations: { enabled: true },
+        toolbar: { show: false },
+        zoom: { enabled: false },
+        foreColor: "rgba(255,255,255,0.75)",
+      },
+
+      series,
+      ...(colors ? { colors } : {}),
+
+      xaxis: {
+        type: "datetime",
+        labels: {
+          datetimeUTC: false,
+          style: { colors: "rgba(255,255,255,0.55)" },
+        },
+      },
+
+      yaxis: {
+        min: 0,
+        title: { text: yTitle, style: { color: "rgba(255,255,255,0.75)" } },
+        labels: {
+          style: { colors: "rgba(255,255,255,0.55)" },
+          formatter: (v) => formatCompact(v),
+        },
+      },
+
+      grid: { borderColor: "rgba(255,255,255,0.08)" },
+
+      legend: {
+        position: "top",
+        labels: { colors: "rgba(255,255,255,0.75)" },
+      },
+
+      tooltip: {
+        enabled: true,
+        shared: tooltipCfg.shared,
+        intersect: tooltipCfg.intersect,
+        theme: "dark",
+        x: { format: "yyyy-MM-dd" },
+      },
+
+      stroke:
+        chartType === "bar" ? { width: 0 } : { width: 2, curve: "straight" },
+      markers: chartType === "bar" ? { size: 0 } : { size: 2 },
+
+      fill:
+        chartType === "bar"
+          ? { opacity: 1 }
+          : { opacity: fillLines ? 0.35 : 0 },
+
+      dataLabels: { enabled: false },
+
+      // make bars look nicer on dense series
+      plotOptions: {
+        bar: { columnWidth: "70%" },
+      },
+    };
+
+    return opts;
+  }
+
+  async function destroyChart() {
     if (chart) {
-      chart.destroy();
+      await chart.destroy();
       chart = null;
     }
   }
 
-  function interactionFromPlotlyHoverMode(plotlyMode) {
-    // plotlyMode from your UI: "x unified", "closest", "x"
-    if (plotlyMode === "x unified") return { mode: "index", intersect: false };
-    if (plotlyMode === "x") return { mode: "nearest", intersect: false };
-    return { mode: "nearest", intersect: true };
-  }
-
-  function buildOptions(yTitle, hoverMode) {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: interactionFromPlotlyHoverMode(hoverMode),
-      plugins: {
-        legend: {
-          position: "top",
-          labels: { color: "rgba(255,255,255,0.75)" },
-        },
-        tooltip: { enabled: true },
-      },
-      scales: {
-        x: {
-          type: "time",
-          time: { unit: "day" },
-          ticks: { color: "rgba(255,255,255,0.55)" },
-          grid: { color: "rgba(255,255,255,0.08)" },
-        },
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: "rgba(255,255,255,0.55)",
-            callback: (v) => formatCompact(v),
-          },
-          title: {
-            display: true,
-            text: yTitle,
-            color: "rgba(255,255,255,0.75)",
-          },
-          grid: { color: "rgba(255,255,255,0.08)" },
-        },
-      },
-    };
-  }
-
-  function plotlyTracesToDatasets(traces, chartType, fillLines) {
-    // Your backend traces for line/bar are Plotly-like:
-    // scatter: {type:"scatter", x:[...], y:[...], name:"...", line:{color:"#..."}}
-    // bar:     {type:"bar", x:[...], y:[...], name:"..."}
-    return (traces || []).map((t) => {
-      const x = t.x || [];
-      const y = t.y || [];
-      const color = t?.line?.color || t?.marker?.color || undefined;
-
-      const data = x.map((xs, i) => ({ x: xs, y: y[i] }));
-
-      const isBar = chartType === "bar";
-      const isScatter = (t.type || "").toLowerCase() === "scatter";
-
-      // If backend sends scatter but user wants bar, still render as bar (and vice versa).
-      const finalType = isBar ? "bar" : "line";
-
-      const ds = {
-        type: finalType,
-        label: t.name || "Series",
-        data,
-        borderWidth: isBar ? 0 : 2,
-        pointRadius: isBar ? 0 : 2,
-        fill: !isBar && fillLines ? true : false,
-      };
-
-      // only set colors if backend provides one
-      if (color) {
-        ds.borderColor = color;
-        ds.backgroundColor = color;
-      }
-
-      return ds;
-    });
-  }
-
-  function updateChartInfo(payload) {
-    const tp = document.querySelector('input[name="timePeriod"]:checked').value;
-    document.getElementById("chartInfo").textContent =
-      `${selectedSeries.size} series • ${tp}`;
-  }
-
+  // Data + chart update
   async function updateChart() {
-    // Force at least one series
     if (selectedSeries.size === 0) selectedSeries.add("total");
 
     toggleLoading(true);
     toggleEmpty(false);
+    updateChartInfo();
 
-    const chartType = document.querySelector(
-      'input[name="chartType"]:checked',
-    ).value;
-    const valueMode = document.querySelector(
-      'input[name="valueMode"]:checked',
-    ).value;
-    const hoverMode = document.querySelector(
-      'input[name="hoverMode"]:checked',
-    ).value;
-    const fillLines = document.getElementById("fillLinesToggle").checked;
+    if (activeController) activeController.abort();
+    activeController = new AbortController();
+
+    const mySeq = ++requestSeq;
+
+    const chartType = getRadioVal("chartType");
+    const valueMode = getRadioVal("valueMode");
+    const hoverMode = getRadioVal("hoverMode");
+    const fillLines = $("fillLinesToggle").checked;
 
     const params = new URLSearchParams({
       chart_type: chartType,
-      time_period: document.querySelector('input[name="timePeriod"]:checked')
-        .value,
-      start_date: document.getElementById("startDate").value,
-      end_date: document.getElementById("endDate").value,
+      time_period: getRadioVal("timePeriod"),
+      start_date: $("startDate").value,
+      end_date: $("endDate").value,
       series: Array.from(selectedSeries).join(","),
       value_mode: valueMode,
-      predictions: document.getElementById("enablePredictions").checked
-        ? "true"
-        : "false",
-      prediction_method: document.getElementById("predictionMethod").value,
-      prediction_days: document.getElementById("predictionDays").value,
+      predictions: $("enablePredictions").checked ? "true" : "false",
+      prediction_method: $("predictionMethod").value,
+      prediction_days: $("predictionDays").value,
       fill_lines: fillLines ? "true" : "false",
     });
+
     if (Array.from(selectedSeries).some((s) => s.startsWith("team:"))) {
-      params.set("team_metric", document.getElementById("teamMetric").value);
+      params.set("team_metric", $("teamMetric").value);
     }
 
     try {
-      const res = await fetch(`/api/trends/data?${params.toString()}`);
+      const res = await fetch(`/api/trends/data?${params.toString()}`, {
+        signal: activeController.signal,
+      });
       const payload = await res.json();
+
+      // If a newer request finished first, ignore this one.
+      if (mySeq !== requestSeq) return;
 
       if (!payload.success)
         throw new Error(payload.error || "Failed to load chart data");
 
-      // If backend returned no traces, show empty state and stop
       if (!Array.isArray(payload.data) || payload.data.length === 0) {
-        destroyChart();
+        await destroyChart();
         toggleEmpty(true);
-        updateChartInfo(payload);
         return;
       }
 
-      // Build datasets
-      const datasets = plotlyTracesToDatasets(
-        payload.data,
-        chartType,
-        fillLines,
-      );
-
-      // If datasets ended up empty, show empty
-      if (!datasets.length) {
-        destroyChart();
+      const { series, colors } = plotlyTracesToApex(payload.data);
+      if (!series.length) {
+        await destroyChart();
         toggleEmpty(true);
-        updateChartInfo(payload);
         return;
       }
 
       const yTitle = valueMode === "interval" ? "Points Produced" : "Points";
-      const ctx = document.getElementById("trendsCanvas").getContext("2d");
 
-      destroyChart();
-      chart = new Chart(ctx, {
-        type: chartType === "bar" ? "bar" : "line",
-        data: { datasets },
-        options: buildOptions(yTitle, hoverMode),
+      const options = buildApexOptions({
+        chartType,
+        fillLines,
+        yTitle,
+        hoverMode,
+        series,
+        colors,
       });
 
-      updateChartInfo(payload);
+      const el = $("trendsChart");
+
+      if (!chart) {
+        chart = new ApexCharts(el, options);
+        await chart.render();
+      } else {
+        await chart.updateOptions(options, true, true);
+      }
     } catch (e) {
+      if (e?.name === "AbortError") return;
+
       console.error(e);
-      destroyChart();
+      await destroyChart();
       toggleEmpty(true);
-      document.getElementById("chartInfo").textContent =
-        `Error: ${e.message || e}`;
+      $("chartInfo").textContent = `Error: ${e.message || e}`;
     } finally {
-      toggleLoading(false);
+      if (mySeq === requestSeq) toggleLoading(false);
     }
   }
 </script>
