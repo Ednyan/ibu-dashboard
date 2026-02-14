@@ -88,11 +88,15 @@ extra_nav_buttons_mobile %}
         </div>
 
         <div class="flex items-baseline gap-2 font-semibold tabular-nums">
-          <span>{{ stats.total_points|compact }}</span>
+          <span title="{{ stats.total_points|commas }}">
+            {{ stats.total_points|compact }}
+          </span>
+
           {% if stats.total_points_gain is defined %} {% set g =
           stats.total_points_gain %}
           <span
             class="px-2 py-0.5 rounded-full text-[0.7rem] font-semibold {% if g > 0 %} bg-green-500/15 text-green-300 {% elif g < 0 %} bg-red-500/15 text-red-300 {% else %} bg-white/5 text-white/40 {% endif %}"
+            title="{{ g|commas }}"
           >
             {% if g > 0 %}+{% endif %}{{ g|compact }}</span
           >
@@ -148,13 +152,17 @@ extra_nav_buttons_mobile %}
 
           <div class="flex items-center gap-2 shrink-0 tabular-nums">
             <!-- Points -->
-            <span class="text-sm font-medium text-orange-500">
+            <span
+              class="text-sm font-medium text-orange-500"
+              title="{{ p.points|commas }}"
+            >
               {{ p.points|compact }}
             </span>
 
             <!-- Gain pill -->
             <span
               class="px-2 py-0.5 rounded-full text-[0.7rem] font-semibold {% if dg > 0 %} bg-green-500/15 text-green-300 {% elif dg < 0 %} bg-red-500/15 text-red-300 {% else %} bg-white/5 text-white/40 {% endif %}"
+              title="{{ dg|commas }}"
             >
               {% if dg > 0 %}+{% endif %}{{ dg|compact }}
             </span>

@@ -976,6 +976,14 @@ def compute_simple_stats_from_latest_csv(previous_file_path=None):
     }
 
 
+@app.template_filter("commas")
+def commas(value):
+    try:
+        return f"{int(value):,}"
+    except (TypeError, ValueError):
+        return value
+
+
 @app.route("/")
 def index():
     file_path, date_str, file_timestamp = get_csv_file_by_index(0)
