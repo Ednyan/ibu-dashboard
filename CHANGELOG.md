@@ -7,21 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.2.0]
 
 ### Improved
 
 - Reorganized html files into blocks
-- Mobile friendly UI
+- Much more mobile friendly UI
 - Minify html/css/js responses for faster load times
 
 ### Changed
 
 - Switched from custom css to tailwind
+- Switched from plotly to apexcharts for graphs
 
 ### Added
 
 - Point gain over the last day on the team overview section
+- Start to the member page
 
 ---
 
