@@ -170,11 +170,29 @@ block head %} {{ super() }}
           ? resp.colors
           : values.map((_, i) => colorForIndex(i));
 
-      const total = resp.meta?.total ?? values.reduce((a, b) => a + b, 0);
+      const sorted = labels
+        .map((label, i) => ({
+          label: String(label),
+          value: Number(values[i]) || 0,
+          color: colors[i] ?? colorForIndex(i),
+        }))
+        .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+
+      const sortedLabels = sorted.map((x) => x.label);
+      const sortedValues = sorted.map((x) => x.value);
+      const sortedColors = sorted.map((x) => x.color);
+
+      const total = resp.meta?.total ?? sortedValues.reduce((a, b) => a + b, 0);
       const hole = resp.meta?.hole ?? 0.6;
       const donutSize = `${Math.round(Number(hole) * 100)}%`;
 
-      return { labels, values, colors, total, donutSize };
+      return {
+        labels: sortedLabels,
+        values: sortedValues,
+        colors: sortedColors,
+        total,
+        donutSize,
+      };
     }
 
     function destroyChart() {
