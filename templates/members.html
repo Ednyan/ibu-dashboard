@@ -30,6 +30,7 @@ content %}
 
   <!-- List -->
   <div
+    id="membersCard"
     class="mt-4 overflow-hidden rounded-xl bg-neutral-800 border border-white/10"
   >
     <!-- Header row -->
@@ -114,11 +115,14 @@ content %}
             <div class="text-xs text-white/50 sm:hidden">Milestones</div>
 
             <div class="grid grid-cols-3 gap-2">
-              {% macro milestone_cell(label, ms) %}
-              <div class="relative group">
+              {% macro milestone_cell(label, ms, align='left') %}
+              {% set pos_class = 'left-0' if align == 'left' else
+              ('left-1/2 -translate-x-1/2' if align == 'center' else 'right-0')
+              %}
+              <div class="relative group milestone-cell">
                 <!-- Pill -->
                 <div
-                  class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ms.passed is sameas(true) %}bg-green-500/15 {% elif ms.passed is sameas(false) %}bg-red-500/15 {% else %}bg-amber-200/15{% endif %}"
+                  class="milestone-pill inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ms.passed is sameas(true) %}bg-green-500/15 {% elif ms.passed is sameas(false) %}bg-red-500/15 {% else %}bg-amber-200/15{% endif %}"
                 >
                   <div
                     class="text-[11px] font-semibold {% if ms.passed is sameas(true) %}text-green-300 {% elif ms.passed is sameas(false) %}text-rose-200 {% else %}text-amber-200{% endif %}"
@@ -128,7 +132,7 @@ content %}
                 </div>
                 <!-- More detailed overview -->
                 <div
-                  class="pointer-events-none absolute left-0 top-full z-50 mt-2 w-56 opacity-0 transition duration-150 ease-out group-hover:opacity-100"
+                  class="milestone-tooltip pointer-events-none absolute {{ pos_class }} top-full z-50 mt-2 w-56 opacity-0 transition duration-150 ease-out group-hover:opacity-100"
                 >
                   <div
                     class="rounded-xl border border-white/15 bg-gray-950/80 p-3 shadow-xl backdrop-blur"
@@ -178,9 +182,9 @@ content %}
                   </div>
                 </div>
               </div>
-              {% endmacro %} {{ milestone_cell('Week', w) }} {{
-              milestone_cell('Month 1', m1) }} {{ milestone_cell('Month 3', m3)
-              }}
+              {% endmacro %} {{ milestone_cell('Week', w, 'left') }} {{
+              milestone_cell('Month 1', m1, 'center') }} {{
+              milestone_cell('Month 3', m3, 'right') }}
             </div>
           </div>
         </div>
@@ -197,6 +201,43 @@ content %}
 <script>
   const input = document.getElementById("memberSearch");
   const rows = document.querySelectorAll(".member-row");
+  const milestoneCells = document.querySelectorAll(".milestone-cell");
+  const membersCard = document.getElementById("membersCard");
+
+  function placeMilestoneTooltip(cell) {
+    const tip = cell.querySelector(".milestone-tooltip");
+    if (!tip) return;
+
+    // Start below the pill, then flip above if the viewport would clip it.
+    tip.classList.remove("top-full", "mt-2", "bottom-full", "mb-2");
+    tip.classList.add("top-full", "mt-2");
+
+    let rect = tip.getBoundingClientRect();
+    const cardRect = membersCard?.getBoundingClientRect();
+    const viewportPadding = 10;
+    const topLimit = cardRect
+      ? Math.max(cardRect.top + 8, viewportPadding)
+      : viewportPadding;
+    const bottomLimit = cardRect
+      ? Math.min(cardRect.bottom - 8, window.innerHeight - viewportPadding)
+      : window.innerHeight - viewportPadding;
+
+    if (rect.bottom > bottomLimit) {
+      tip.classList.remove("top-full", "mt-2");
+      tip.classList.add("bottom-full", "mb-2");
+      rect = tip.getBoundingClientRect();
+      if (rect.top < topLimit) {
+        tip.classList.remove("bottom-full", "mb-2");
+        tip.classList.add("top-full", "mt-2");
+      }
+    }
+  }
+
+  milestoneCells.forEach((cell) => {
+    cell.addEventListener("mouseenter", () => placeMilestoneTooltip(cell));
+    cell.addEventListener("focusin", () => placeMilestoneTooltip(cell));
+  });
+
   input?.addEventListener("input", () => {
     const q = input.value.toLowerCase().trim();
     rows.forEach((r) => {
