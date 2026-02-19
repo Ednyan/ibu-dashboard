@@ -225,9 +225,27 @@ block head %} {{ super() }}
           theme: "dark",
           y: {
             formatter: function (value, opts) {
-              const label = opts?.w?.globals?.labels?.[opts.seriesIndex] ?? "";
-              const pct = ds.total ? (value / ds.total) * 100 : 0;
-              return `${label}: ${Number(value).toLocaleString()} (${pct.toFixed(1)}%)`;
+              const numericValue = Number(value) || 0;
+              const idxCandidates = [
+                opts?.dataPointIndex,
+                opts?.seriesIndex,
+                opts?.w?.globals?.series?.findIndex?.(
+                  (v) => Number(v) === numericValue,
+                ),
+                ds.values.findIndex((v) => Number(v) === numericValue),
+              ];
+              const idx =
+                idxCandidates.find((i) => Number.isInteger(i) && i >= 0) ?? -1;
+
+              // Use the same source as the right-side legend first.
+              const rawLabel =
+                ds.labels?.[idx] ??
+                opts?.w?.globals?.labels?.[idx] ??
+                opts?.w?.config?.labels?.[idx] ??
+                "Unknown user";
+              const label = String(rawLabel);
+              const pct = ds.total ? (numericValue / ds.total) * 100 : 0;
+              return `${label}: ${numericValue.toLocaleString()} (${pct.toFixed(1)}%)`;
             },
             title: { formatter: () => "" },
           },
