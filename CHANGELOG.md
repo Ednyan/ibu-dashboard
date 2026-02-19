@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.1]
+
+### Improved
+
+- Member probation calculation
+
+### Fixed
+
+- Now shows username when you hover on the team info page
+- Members page now moves the hover element on the so it doesnt clip
+- Team info now sorts users by points
+
+---
+
 ## [1.2.0]
 
 ### Improved
