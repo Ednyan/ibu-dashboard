@@ -1,32 +1,26 @@
 # Docker Production Setup.
 
-> [!NOTE]
-> This will get you an environment that runs on 0.0.0.0:5000 and scrapes sheepit every day at 7PM.
+This will get you an environment that runs on `http://0.0.0.0:5000` and scrapes sheepit every day at 7PM.
+
+> [!WARNING]
+> Running this in production not really recommended as it gives little to no benifit over using the public instance. This is mainly intended as a reference point.
 
 ## Requirements
 
 - Docker
+- Docker Compose
 
 ## Instructions
 
 - Clone this repo.
-- Create a `docker-compose.yml` and `.env` file. There are example templates you can use for both.
-- Run `docker compose up -d --build`
+- Create a `docker-compose.override.yml`, e.g.
 
-# Local Production Setup
+```yml
+services:
+  ibu:
+    ports:
+      - "5000:5000"
+```
 
-> [!WARNING]
-> Setting this up locally is not recommended for production, it is highly recommended to use docker.
-
-## Requirements
-
-- Rust
-- Python
-
-## Instructions
-
-- Clone this repo.
-- Run `./scripts/setup.sh` to do initial setup.
-- To get the webserver running, run `./scripts/run.sh` This will expose a server on 0.0.0.0:5000.
-- Create an `.env` file to configure the app. You can use the provided `.env.example` file as a reference.
-- To scrape team data you can run `./ibu_dashboard/sheepit_scraper.py`, or use a cron job.
+- Copy the `env.example` file to `.env` and edit as needed.
+- Run `docker compose up -d --build`.

@@ -6,9 +6,6 @@ services:
     container_name: ibu-dashboard
     restart: unless-stopped
 
-    ports:
-      - "5000:5000"
-
     env_file:
       - .env
 
