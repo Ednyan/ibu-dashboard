@@ -115,10 +115,9 @@ content %}
             <div class="text-xs text-white/50 sm:hidden">Milestones</div>
 
             <div class="grid grid-cols-3 gap-2">
-              {% macro milestone_cell(label, ms, align='left') %}
-              {% set pos_class = 'left-0' if align == 'left' else
-              ('left-1/2 -translate-x-1/2' if align == 'center' else 'right-0')
-              %}
+              {% macro milestone_cell(label, ms, align='left') %} {% set
+              pos_class = 'left-0' if align == 'left' else ('left-1/2
+              -translate-x-1/2' if align == 'center' else 'right-0') %}
               <div class="relative group milestone-cell">
                 <!-- Pill -->
                 <div
