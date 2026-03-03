@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.2]
+
+### Changed
+
+- Switched link from git to the team on Sheepit
+
+### Fixed
+
+- Doesn't hide popup on members page
+
+---
+
 ## [1.2.1]
 
 ### Improved
