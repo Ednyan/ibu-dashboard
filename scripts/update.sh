@@ -2,6 +2,7 @@
 
 # Update repo
 git pull origin main
+
 # Update python modules
 
 # Python setup
@@ -10,7 +11,3 @@ if [[ "$1" == "uv" ]]; then
 else
     ./.venv/bin/python -m pip install --upgrade -r requirements.txt
 fi
-
-
-# Rebuild custom rust modules
-./scripts/build.sh

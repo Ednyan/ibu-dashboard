@@ -15,11 +15,6 @@ else
     ./.venv/bin/python -m pip install -r requirements.txt
 fi
 
-
-# Rust setup
-./scripts/build.sh
-
 # Node setup
-npm install 
+npm install
 npx @tailwindcss/cli -i ./static/input.css -o ./static/tailwind.css --minify
-
