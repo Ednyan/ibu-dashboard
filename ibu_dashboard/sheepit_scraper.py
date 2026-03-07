@@ -1,12 +1,13 @@
+import csv
+import hashlib
+import os
+import re
+import time
+from datetime import datetime
+
 import requests
 from bs4 import BeautifulSoup
-import csv
-import os
-from datetime import datetime
-import hashlib
 from dotenv import load_dotenv
-import time
-import re
 
 # Load environment variables
 load_dotenv()

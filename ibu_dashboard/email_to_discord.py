@@ -1,13 +1,14 @@
-import os
-import re
-import json
-import time
-import imaplib
-import requests
 import email
 import html
+import imaplib
+import json
+import os
+import re
+import time
 from email.header import decode_header, make_header
 from email.utils import parsedate_to_datetime
+
+import requests
 from dotenv import load_dotenv
 
 # Resolve absolute paths relative to this file so multiple processes share the same files

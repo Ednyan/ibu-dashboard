@@ -1,15 +1,16 @@
+import json
+import os
 import smtplib
 import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.utils import formataddr
-from datetime import datetime
-import os
-import json
 import threading
-from typing import List, Dict, Optional, Any
-import httpx
+from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formataddr
 from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import httpx
 
 
 class NotificationService:
@@ -364,14 +365,14 @@ class NotificationService:
                     <h1>🚨 Probation Failure Alert</h1>
                     <p>Immediate attention required</p>
                 </div>
-                
+
                 <div class="content">
                     <div class="alert">
                         <h2>Member: {member_name}</h2>
                         <p><strong>Status:</strong> FAILED PROBATION</p>
                         <p><strong>Failed Milestone(s):</strong> {failed_text}</p>
                     </div>
-                    
+
                     <div class="details">
                         <h3>Member Details</h3>
                         <p><strong>Joined Date:</strong> {joined_date}</p>
@@ -379,7 +380,7 @@ class NotificationService:
                         <p><strong>Current Points:</strong> {current_points:,}</p>
                         <p><strong>Notification Time:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
                     </div>
-                    
+
                     <h3>Milestone Status</h3>
         """
 
@@ -460,7 +461,7 @@ Milestone Status:
         text_content += f"""
 Required Actions:
 - Review member performance data
-- Contact member for performance discussion  
+- Contact member for performance discussion
 - Consider probation extension or termination
 - Update member status in team management system
 
@@ -518,13 +519,13 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                         <h1>🎉 Probation Passed</h1>
                         <p>Congratulations IBU Team, a member has passed their probation!</p>
                     </div>
-                    
+
                     <div class="content">
                         <div class="alert">
                             <h2>Member: {member_name}</h2>
                             <p><strong>Status:</strong> PASSED PROBATION</p>
                         </div>
-                        
+
                         <div class="details">
                             <h3>Member Details</h3>
                             <p><strong>Joined Date:</strong> {joined_date}</p>
@@ -532,7 +533,7 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                             <p><strong>Current Points:</strong> {current_points:,}</p>
                             <p><strong>Notification Time:</strong> {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
                         </div>
-                        
+
                         <h3>Milestone Status</h3>
             """
 
@@ -570,9 +571,9 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                 """
 
         html_content += f"""
-                        
+
                     </div>
-                    
+
                     <div class="footer">
                         <p>This is an automated notification from the I.B.U Team Dashboard</p>
                         <p>Generated on {datetime.now().strftime("%Y-%m-%d at %H:%M:%S")}</p>
@@ -654,13 +655,13 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                     <h1>⚠️ Non Compliant</h1>
                     <p>Attention IBU Team, a member has been marked as non-compliant!</p>
                 </div>
-                
+
                 <div class="content">
                     <div class="alert">
                         <h2>Member: {member_name}</h2>
                         <p><strong>Status:</strong> NON-COMPLIANT</p>
                     </div>
-                    
+
                     <div class="details">
                         <h3>Member Details</h3>
                         <p><strong>Joined Date:</strong> {joined_date}</p>
@@ -700,9 +701,9 @@ Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         """
 
         html_content += f"""
-                    
+
                 </div>
-                
+
                 <div class="footer">
                     <p>This is an automated notification from the I.B.U Team Dashboard</p>
                     <p>Generated on {datetime.now().strftime("%Y-%m-%d at %H:%M:%S")}</p>

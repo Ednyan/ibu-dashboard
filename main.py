@@ -1,38 +1,39 @@
-from flask import (
-    Flask,
-    request,
-    render_template,
-    jsonify,
-    Response,
-    session,
-    redirect,
-    url_for,
-    send_file,
-    flash,
-)
-from datetime import datetime, timedelta
-import pandas as pd
-import os
-import hashlib
-import queue
-import json
-import sys
-import signal
 import atexit
 import glob
-import re
-import zipfile
+import hashlib
 import io
-import threading
+import json
 import logging
+import os
+import queue
+import re
+import signal
+import sys
+import threading
 import time
-from dotenv import load_dotenv
-from werkzeug.exceptions import HTTPException, BadRequest
-import minify_html
+import zipfile
 from bisect import bisect_left
+from datetime import datetime, timedelta
+
+import minify_html
+import pandas as pd
+from dotenv import load_dotenv
+from flask import (
+    Flask,
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
 
 # Rust imports
 from rustlibs import get_csv_files_from_folder
+from werkzeug.exceptions import BadRequest, HTTPException
 
 # Load environment variables from .env file
 load_dotenv()
@@ -193,8 +194,8 @@ def _sanitize_team_name(name: str) -> str:
         if name is None:
             return ""
         # Normalize unicode form
-        import unicodedata
         import re as _re
+        import unicodedata
 
         n = unicodedata.normalize("NFKC", str(name)).lower()
         # Replace non-alphanumeric with space
