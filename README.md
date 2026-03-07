@@ -13,7 +13,6 @@ This is a project made by members of the [I.B.U. Sheepit team](https://sheepit-r
 
 ### Requirements
 
-- Rust
 - Python 3
 - Nodejs
 - Tmux
@@ -21,7 +20,7 @@ This is a project made by members of the [I.B.U. Sheepit team](https://sheepit-r
 ### Instructions
 
 - Clone this repo.
-- Run `./scripts/setup.sh` To make a virtual python environment, build rust libraries, and install dependencies.
+- Run `./scripts/setup.sh` To make a virtual python environment and install dependencies.
 - Run `./scripts/dev.sh`
 - Go to http://localhost:5000/ to view.
 
