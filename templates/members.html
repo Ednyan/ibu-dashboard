@@ -37,10 +37,38 @@ content %}
     <div
       class="hidden grid-cols-12 gap-3 border-b border-white/10 px-4 py-3 text-xs font-semibold text-white/60 sm:grid"
     >
-      <div class="col-span-3">Member</div>
-      <div class="col-span-1">Days</div>
-      <div class="col-span-2">Points</div>
-      <div class="col-span-2">Status</div>
+      <div
+        class="col-span-3 cursor-pointer sort-header flex items-center gap-1"
+        data-sort="name"
+      >
+        Member
+        <span class="sort-icon"></span>
+      </div>
+
+      <div
+        class="col-span-1 cursor-pointer sort-header flex items-center gap-1"
+        data-sort="days"
+      >
+        Days
+        <span class="sort-icon"></span>
+      </div>
+
+      <div
+        class="col-span-2 cursor-pointer sort-header flex items-center gap-1"
+        data-sort="points"
+      >
+        Points
+        <span class="sort-icon"></span>
+      </div>
+
+      <div
+        class="col-span-2 cursor-pointer sort-header flex items-center gap-1"
+        data-sort="status"
+      >
+        Status
+        <span class="sort-icon"></span>
+      </div>
+
       <div class="col-span-4">Milestones</div>
     </div>
 
@@ -52,6 +80,9 @@ content %}
       <li
         class="member-row px-4 py-3 hover:bg-white/5"
         data-name="{{ m.name | lower }}"
+        data-days="{{ m.days_since_joined }}"
+        data-points="{{ m.current_points }}"
+        data-status="{{ ps }}"
       >
         <div
           class="grid grid-cols-1 gap-2 sm:grid-cols-12 sm:items-center sm:gap-3"
@@ -198,6 +229,80 @@ content %}
 </div>
 
 <script>
+  const ICON_RIGHT = `
+<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-60" viewBox="0 0 20 20" fill="currentColor">
+  <path fill-rule="evenodd" d="M7 5l5 5-5 5V5z" clip-rule="evenodd"/>
+</svg>
+`;
+
+  const ICON_UP = `
+<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-80" viewBox="0 0 20 20" fill="currentColor">
+  <path fill-rule="evenodd" d="M10 5l5 7H5l5-7z" clip-rule="evenodd"/>
+</svg>
+`;
+
+  const ICON_DOWN = `
+<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 opacity-80" viewBox="0 0 20 20" fill="currentColor">
+  <path fill-rule="evenodd" d="M10 15l-5-7h10l-5 7z" clip-rule="evenodd"/>
+</svg>
+`;
+  const list = document.getElementById("membersList");
+  const headers = document.querySelectorAll(".sort-header");
+  headers.forEach((h) => {
+    h.querySelector(".sort-icon").innerHTML = ICON_RIGHT;
+  });
+  let currentSort = {
+    column: null,
+    asc: true,
+  };
+
+  headers.forEach((h) => {
+    h.addEventListener("click", () => {
+      const column = h.dataset.sort;
+
+      if (currentSort.column === column) {
+        currentSort.asc = !currentSort.asc;
+      } else {
+        currentSort.column = column;
+        currentSort.asc = true;
+      }
+
+      sortMembers(column, currentSort.asc);
+
+      headers.forEach((header) => {
+        const icon = header.querySelector(".sort-icon");
+
+        if (header.dataset.sort !== column) {
+          icon.innerHTML = ICON_RIGHT;
+        } else {
+          icon.innerHTML = currentSort.asc ? ICON_UP : ICON_DOWN;
+        }
+      });
+    });
+  });
+
+  function sortMembers(column, asc) {
+    const rows = Array.from(document.querySelectorAll(".member-row"));
+
+    rows.sort((a, b) => {
+      let av = a.dataset[column];
+      let bv = b.dataset[column];
+
+      if (column === "days" || column === "points") {
+        av = Number(av);
+        bv = Number(bv);
+      } else {
+        av = av.toLowerCase();
+        bv = bv.toLowerCase();
+      }
+
+      if (av > bv) return asc ? 1 : -1;
+      if (av < bv) return asc ? -1 : 1;
+      return 0;
+    });
+
+    rows.forEach((r) => list.appendChild(r));
+  }
   const input = document.getElementById("memberSearch");
   const rows = document.querySelectorAll(".member-row");
   const milestoneCells = document.querySelectorAll(".milestone-cell");
