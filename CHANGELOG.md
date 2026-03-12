@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Ability to sort by different fields on the members page
+
+### Fixed
+
+- Year selection option was above 90 days and 180 days on the trends page
+
 ### Removed
 
 - All rust code, as it was never needed for this project
