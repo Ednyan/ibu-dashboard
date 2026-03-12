@@ -131,14 +131,6 @@ content %}
               %}Passed {% elif ps == 'completed' %}Completed {% elif ps ==
               'failed' %}Failed {% else %}{{ ps }}{% endif %}
             </span>
-
-            {% if ps == 'passed' and m.post_probation_status %}
-            <span
-              class="ml-2 inline-flex items-center rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[11px] text-white/80"
-            >
-              N/A
-            </span>
-            {% endif %}
           </div>
 
           <!-- Milestones -->
