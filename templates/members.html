@@ -38,6 +38,13 @@ content %}
       class="hidden grid-cols-12 gap-3 border-b border-white/10 px-4 py-3 text-xs font-semibold text-white/60 sm:grid"
     >
       <div
+        class="col-span-1 cursor-pointer sort-header flex items-center gap-1"
+        data-sort="rank"
+      >
+        Rank
+        <span class="sort-icon"></span>
+      </div>
+      <div
         class="col-span-3 cursor-pointer sort-header flex items-center gap-1"
         data-sort="name"
       >
@@ -69,7 +76,7 @@ content %}
         <span class="sort-icon"></span>
       </div>
 
-      <div class="col-span-4">Milestones</div>
+      <div class="col-span-3">Milestones</div>
     </div>
 
     <ul id="membersList" class="divide-y divide-x divide-white/10">
@@ -87,20 +94,25 @@ content %}
         <div
           class="grid grid-cols-1 gap-2 sm:grid-cols-12 sm:items-center sm:gap-3"
         >
+          <!-- Rank -->
+          <div class="sm:col-span-1 sm:text-left pl-1">
+            <div class="text-xs text-white/50 sm:hidden">Rank</div>
+            <div class="rank-value text-sm font-semibold text-white">-</div>
+          </div>
           <!-- Member -->
           <div class="sm:col-span-3">
             <div class="flex items-center gap-2">
               <div class="min-w-0">
                 <div class="font-semibold text-white mb-1">
                   <a
-                    class="shrink-0 rounded-4xl py-1 px-2 hover:bg-white/10"
+                    class="shrink-0 rounded-4xl py-1 hover:bg-white/10"
                     href="/member/{{ m.name|urlencode }}"
                     title="Profile"
                   >
                     {{ m.name }}
                   </a>
                 </div>
-                <div class="px-2 text-xs text-white/50">
+                <div class="text-xs text-white/50">
                   Joined {{ m.joined_date }}
                 </div>
               </div>
@@ -134,7 +146,7 @@ content %}
           </div>
 
           <!-- Milestones -->
-          <div class="sm:col-span-4">
+          <div class="sm:col-span-3">
             <div class="text-xs text-white/50 sm:hidden">Milestones</div>
 
             <div class="grid grid-cols-3 gap-2">
@@ -244,9 +256,45 @@ content %}
     h.querySelector(".sort-icon").innerHTML = ICON_RIGHT;
   });
   let currentSort = {
-    column: null,
+    column: "rank",
     asc: true,
   };
+
+  function formatOrdinal(n) {
+    const mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+    switch (n % 10) {
+      case 1:
+        return `${n}st`;
+      case 2:
+        return `${n}nd`;
+      case 3:
+        return `${n}rd`;
+      default:
+        return `${n}th`;
+    }
+  }
+
+  function assignRanks() {
+    const rows = Array.from(document.querySelectorAll(".member-row"));
+    const sorted = [...rows].sort((a, b) => {
+      const ap = Number(a.dataset.points);
+      const bp = Number(b.dataset.points);
+      if (bp !== ap) return bp - ap;
+      const an = (a.dataset.name || "").toLowerCase();
+      const bn = (b.dataset.name || "").toLowerCase();
+      if (an > bn) return 1;
+      if (an < bn) return -1;
+      return 0;
+    });
+
+    sorted.forEach((row, idx) => {
+      const rank = idx + 1;
+      row.dataset.rank = String(rank);
+      const cell = row.querySelector(".rank-value");
+      if (cell) cell.textContent = formatOrdinal(rank);
+    });
+  }
 
   headers.forEach((h) => {
     h.addEventListener("click", () => {
@@ -280,7 +328,7 @@ content %}
       let av = a.dataset[column];
       let bv = b.dataset[column];
 
-      if (column === "days" || column === "points") {
+      if (column === "days" || column === "points" || column === "rank") {
         av = Number(av);
         bv = Number(bv);
       } else {
@@ -295,6 +343,14 @@ content %}
 
     rows.forEach((r) => list.appendChild(r));
   }
+  assignRanks();
+  sortMembers(currentSort.column, currentSort.asc);
+  headers.forEach((header) => {
+    const icon = header.querySelector(".sort-icon");
+    if (header.dataset.sort === currentSort.column) {
+      icon.innerHTML = currentSort.asc ? ICON_UP : ICON_DOWN;
+    }
+  });
   const input = document.getElementById("memberSearch");
   const rows = document.querySelectorAll(".member-row");
   const milestoneCells = document.querySelectorAll(".milestone-cell");
