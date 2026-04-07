@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.5]
+
+### Fixed
+
+- Fixed issue with the scraper and using prebuilt images
+
+---
+
 ## [1.2.4]
 
 ### Added
