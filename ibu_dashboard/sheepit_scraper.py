@@ -4,30 +4,160 @@ import os
 import re
 import time
 from datetime import datetime
+from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
+import tomllib
 
-# Load environment variables
-load_dotenv()
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.toml"
 
-# Configuration
-SCRAPED_TEAM_INFO_FOLDER = os.getenv("DATA_FOLDER", "Scraped_Team_Info")
-SCRAPED_TEAMS_POINTS_FOLDER = os.getenv(
-    "SCRAPED_TEAMS_POINTS_FOLDER", "Scraped_Teams_Points"
-)
-# SheepIt URLs
-LOGIN_URL = "https://www.sheepit-renderfarm.com/user/authenticate"
-TEAM_URL = os.getenv("SHEEPIT_TEAM_URL", "https://www.sheepit-renderfarm.com/team/2109")
-TEAMS_POINTS_URL = os.getenv(
-    "SHEEPIT_TEAMS_POINTS_URL", "https://www.sheepit-renderfarm.com/team"
-)
-TEAM_PROBATION_URL = os.getenv("TEAM_PROBATION_URL", "")
 
-# Login credentials from environment variables
-USERNAME = os.getenv("SHEEPIT_USERNAME", "your_username_here")
-PASSWORD = os.getenv("SHEEPIT_PASSWORD", "your_password_here")
+def _coerce_bool(value, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+def _resolve_config_path(config_path: str | None) -> Path:
+    if config_path:
+        candidate = Path(config_path)
+    else:
+        candidate = DEFAULT_CONFIG_PATH
+
+    if candidate.is_absolute():
+        return candidate
+
+    cwd_candidate = Path.cwd() / candidate
+    if cwd_candidate.exists():
+        return cwd_candidate
+
+    return PROJECT_ROOT / candidate
+
+
+def _load_scraper_config(config_path: str | None = None) -> tuple[dict, Path]:
+    path = _resolve_config_path(config_path)
+    defaults = {
+        "scraper": {
+            "general": {
+                "request_timeout_seconds": 60,
+                "teams_rank_limit": 150,
+            },
+            "sheepit": {
+                "username": "your_username_here",
+                "password": "your_password_here",
+                "login_url": "https://www.sheepit-renderfarm.com/user/authenticate",
+                "team_url": "https://www.sheepit-renderfarm.com/team/2109",
+                "teams_points_url": "https://www.sheepit-renderfarm.com/team",
+            },
+            "output": {
+                "team_info_folder": "Scraped_Team_Info",
+                "teams_points_folder": "Scraped_Teams_Points",
+            },
+            "dashboard": {
+                "team_probation_url": "",
+                "trigger_notifications": True,
+            },
+        },
+    }
+    raw = {}
+
+    if path.exists():
+        try:
+            with open(path, "rb") as f:
+                raw = tomllib.load(f)
+            print(f"⚙️ Loaded scraper config from {path}")
+        except Exception as e:
+            print(f"❌ Failed to parse scraper config at {path}: {e}")
+            raise RuntimeError(f"Invalid TOML in {path}: {e}") from e
+    else:
+        print(f"⚠️ Config file not found at {path}. Using built-in defaults.")
+        print("💡 Copy config.toml.example to config.toml and set your real values.")
+
+    scraper_root = raw.get("scraper", {})
+    general_cfg = scraper_root.get("general", {})
+    sheepit_cfg = scraper_root.get("sheepit", {})
+    output_cfg = scraper_root.get("output", {})
+    dashboard_cfg = scraper_root.get("dashboard", {})
+
+    config = {
+        "sheepit": {
+            "username": sheepit_cfg.get(
+                "username", defaults["scraper"]["sheepit"]["username"]
+            ),
+            "password": sheepit_cfg.get(
+                "password", defaults["scraper"]["sheepit"]["password"]
+            ),
+            "login_url": sheepit_cfg.get(
+                "login_url", defaults["scraper"]["sheepit"]["login_url"]
+            ),
+            "team_url": sheepit_cfg.get(
+                "team_url", defaults["scraper"]["sheepit"]["team_url"]
+            ),
+            "teams_points_url": sheepit_cfg.get(
+                "teams_points_url", defaults["scraper"]["sheepit"]["teams_points_url"]
+            ),
+        },
+        "output": {
+            "team_info_folder": output_cfg.get(
+                "team_info_folder", defaults["scraper"]["output"]["team_info_folder"]
+            ),
+            "teams_points_folder": output_cfg.get(
+                "teams_points_folder",
+                defaults["scraper"]["output"]["teams_points_folder"],
+            ),
+        },
+        "dashboard": {
+            "team_probation_url": dashboard_cfg.get(
+                "team_probation_url",
+                defaults["scraper"]["dashboard"]["team_probation_url"],
+            ),
+            "trigger_notifications": _coerce_bool(
+                dashboard_cfg.get(
+                    "trigger_notifications",
+                    defaults["scraper"]["dashboard"]["trigger_notifications"],
+                ),
+                default=defaults["scraper"]["dashboard"]["trigger_notifications"],
+            ),
+        },
+        "scraper": {
+            "request_timeout_seconds": int(
+                general_cfg.get(
+                    "request_timeout_seconds",
+                    defaults["scraper"]["general"]["request_timeout_seconds"],
+                )
+            ),
+            "teams_rank_limit": int(
+                general_cfg.get(
+                    "teams_rank_limit",
+                    defaults["scraper"]["general"]["teams_rank_limit"],
+                )
+            ),
+        },
+    }
+
+    return config, path
+
+
+CONFIG, CONFIG_PATH = _load_scraper_config()
+
+SCRAPED_TEAM_INFO_FOLDER = CONFIG["output"]["team_info_folder"]
+SCRAPED_TEAMS_POINTS_FOLDER = CONFIG["output"]["teams_points_folder"]
+
+LOGIN_URL = CONFIG["sheepit"]["login_url"]
+TEAM_URL = CONFIG["sheepit"]["team_url"]
+TEAMS_POINTS_URL = CONFIG["sheepit"]["teams_points_url"]
+TEAM_PROBATION_URL = CONFIG["dashboard"]["team_probation_url"]
+
+USERNAME = CONFIG["sheepit"]["username"]
+PASSWORD = CONFIG["sheepit"]["password"]
+
+REQUEST_TIMEOUT_SECONDS = CONFIG["scraper"]["request_timeout_seconds"]
+TEAMS_RANK_LIMIT = CONFIG["scraper"]["teams_rank_limit"]
+TRIGGER_NOTIFICATIONS = CONFIG["dashboard"]["trigger_notifications"]
 
 
 def name_to_color(name):
@@ -53,13 +183,15 @@ def scrape_teams_points():
     payload = {"login": USERNAME, "password": PASSWORD}
     try:
         with requests.session() as session:
-            login_response = session.post(LOGIN_URL, data=payload)
+            login_response = session.post(
+                LOGIN_URL, data=payload, timeout=REQUEST_TIMEOUT_SECONDS
+            )
             if login_response.status_code != 200:
                 print(
                     f"❌ Login (teams points) failed with status code: {login_response.status_code}"
                 )
                 return None
-            resp = session.get(TEAMS_POINTS_URL)
+            resp = session.get(TEAMS_POINTS_URL, timeout=REQUEST_TIMEOUT_SECONDS)
             if resp.status_code != 200:
                 print(
                     f"❌ Failed to fetch teams points page. Status {resp.status_code}"
@@ -99,9 +231,9 @@ def scrape_teams_points():
                 if len(cols) < 6:
                     continue
                 raw_rank = parse_int(cols[0])
-                if raw_rank == 0 or raw_rank > 150:
-                    # Skip empty rank rows / stop after >150
-                    if raw_rank > 150:
+                if raw_rank == 0 or raw_rank > TEAMS_RANK_LIMIT:
+                    # Skip empty rank rows / stop after rank limit
+                    if raw_rank > TEAMS_RANK_LIMIT:
                         break
                     continue
                 name = cols[1].get_text(strip=True)
@@ -187,7 +319,9 @@ def scrape_team_data():
         # Start session and login
         print("🔑 Logging into SheepIt...")
         with requests.session() as session:
-            login_response = session.post(LOGIN_URL, data=payload)
+            login_response = session.post(
+                LOGIN_URL, data=payload, timeout=REQUEST_TIMEOUT_SECONDS
+            )
 
             if login_response.status_code != 200:
                 print(f"❌ Login failed with status code: {login_response.status_code}")
@@ -195,7 +329,7 @@ def scrape_team_data():
 
             # Get team page
             print("📊 Fetching team data...")
-            team_response = session.get(TEAM_URL)
+            team_response = session.get(TEAM_URL, timeout=REQUEST_TIMEOUT_SECONDS)
 
             if team_response.status_code != 200:
                 print(
@@ -297,12 +431,12 @@ def save_team_data_to_csv(team_data):
 def trigger_notifications():
     """Trigger notification processing by calling the probation data endpoint"""
     if not TEAM_PROBATION_URL:
-        print("⚠️  IBU Dashboard URL not configured in .env file")
+        print("⚠️  IBU Dashboard URL not configured in config.toml")
         return False
 
     try:
         print("📧 Triggering notification processing...")
-        response = requests.get(TEAM_PROBATION_URL, timeout=60)
+        response = requests.get(TEAM_PROBATION_URL, timeout=REQUEST_TIMEOUT_SECONDS)
 
         if response.status_code == 200:
             print("✅ Successfully triggered notification processing")
@@ -325,19 +459,16 @@ def main():
     """Main function to run the scraper"""
     print("🚀 SheepIt Team Data Scraper - Local Version")
     print("=" * 50)
+    print(f"🧭 Config path: {CONFIG_PATH}")
+    print(f"🗂️ Team info output: {SCRAPED_TEAM_INFO_FOLDER}")
+    print(f"🗂️ Team rankings output: {SCRAPED_TEAMS_POINTS_FOLDER}")
 
     # Check credentials
     if USERNAME == "your_username_here" or PASSWORD == "your_password_here":
-        print("⚠️  WARNING: Please set your SheepIt credentials!")
-        print("You can either:")
-        print("1. Set environment variables: SHEEPIT_USERNAME and SHEEPIT_PASSWORD")
-        print("2. Edit this script and replace the placeholder values")
-        print("\nExample using environment variables:")
+        print("⚠️  WARNING: Please set your SheepIt credentials in config.toml!")
+        print(f"Expected config file: {CONFIG_PATH}")
         print(
-            "Windows: set SHEEPIT_USERNAME=your_username && set SHEEPIT_PASSWORD=your_password"
-        )
-        print(
-            "Linux/Mac: export SHEEPIT_USERNAME=your_username && export SHEEPIT_PASSWORD=your_password"
+            "Copy config.toml.example to config.toml and fill in scraper.sheepit.username/password."
         )
         return
 
@@ -367,12 +498,15 @@ def main():
             "\n💡 The dashboard will automatically detect new member file(s) within 30 seconds."
         )
         # Slight delay then trigger dashboard refresh (only once)
-        time.sleep(2)
-        notification_success = trigger_notifications()
-        if notification_success:
-            print("✅ All processes completed successfully!")
+        if TRIGGER_NOTIFICATIONS:
+            time.sleep(2)
+            notification_success = trigger_notifications()
+            if notification_success:
+                print("✅ All processes completed successfully!")
+            else:
+                print("⚠️ Dashboard refresh request failed or not configured")
         else:
-            print("⚠️ Dashboard refresh request failed or not configured")
+            print("ℹ️ Dashboard notification trigger is disabled in scraper config.")
     else:
         print("❌ No data scraped successfully (members or rankings)")
 

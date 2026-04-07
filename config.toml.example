@@ -1,0 +1,19 @@
+
+[scraper.general]
+request_timeout_seconds = 60
+teams_rank_limit = 150
+
+[scraper.sheepit]
+username = ""
+password = ""
+login_url = "https://www.sheepit-renderfarm.com/user/authenticate"
+team_url = "https://www.sheepit-renderfarm.com/team/2109"
+teams_points_url = "https://www.sheepit-renderfarm.com/team"
+
+[scraper.output]
+team_info_folder = "Scraped_Team_Info"
+teams_points_folder = "Scraped_Teams_Points"
+
+[scraper.dashboard]
+team_probation_url = "https://ibu.koolkid6958.dev/get_probation_data"
+trigger_notifications = true
