@@ -14,6 +14,24 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config.toml"
 
 
+def _ordinal_suffix(day: int) -> str:
+    if 11 <= day % 100 <= 13:
+        return "th"
+    return {1: "st", 2: "nd", 3: "rd"}.get(day % 10, "th")
+
+
+def _format_run_timestamp(dt: datetime | None = None) -> str:
+    now = (dt or datetime.now()).astimezone()
+    month = now.strftime("%b")
+    day = now.day
+    year = now.year
+    hour = now.strftime("%I").lstrip("0") or "0"
+    minute = now.strftime("%M")
+    am_pm = now.strftime("%p")
+    tz = now.strftime("%Z") or "LOCAL"
+    return f"{month} {day}{_ordinal_suffix(day)}, {year} {hour}:{minute}{am_pm} {tz}"
+
+
 def _coerce_bool(value, default: bool = False) -> bool:
     if isinstance(value, bool):
         return value
@@ -69,13 +87,12 @@ def _load_scraper_config(config_path: str | None = None) -> tuple[dict, Path]:
         try:
             with open(path, "rb") as f:
                 raw = tomllib.load(f)
-            print(f"⚙️ Loaded scraper config from {path}")
         except Exception as e:
-            print(f"❌ Failed to parse scraper config at {path}: {e}")
+            print(f"Error: Failed to parse config at {path}: {e}")
             raise RuntimeError(f"Invalid TOML in {path}: {e}") from e
     else:
-        print(f"⚠️ Config file not found at {path}. Using built-in defaults.")
-        print("💡 Copy config.toml.example to config.toml and set your real values.")
+        print(f"Warning: Config file not found at {path}. Using built-in defaults.")
+        print("Warning: Copy config.toml.example to config.toml and set real values.")
 
     scraper_root = raw.get("scraper", {})
     general_cfg = scraper_root.get("general", {})
@@ -170,16 +187,13 @@ def ensure_output_folder():
     """Create the output folder if it doesn't exist"""
     if not os.path.exists(SCRAPED_TEAM_INFO_FOLDER):
         os.makedirs(SCRAPED_TEAM_INFO_FOLDER)
-        print(f"Created folder: {SCRAPED_TEAM_INFO_FOLDER}")
     if not os.path.exists(SCRAPED_TEAMS_POINTS_FOLDER):
         os.makedirs(SCRAPED_TEAMS_POINTS_FOLDER)
-        print(f"Created folder: {SCRAPED_TEAMS_POINTS_FOLDER}")
 
 
 def scrape_teams_points():
     """Scrape aggregate teams points table (rankings) from SheepIt /team page.
     Output structure per row: Rank, Name, 90_days, 180_days, total_points, members."""
-    print("🔄 Starting SheepIt teams points scraping...")
     payload = {"login": USERNAME, "password": PASSWORD}
     try:
         with requests.session() as session:
@@ -188,19 +202,19 @@ def scrape_teams_points():
             )
             if login_response.status_code != 200:
                 print(
-                    f"❌ Login (teams points) failed with status code: {login_response.status_code}"
+                    f"Error: Login failed while scraping team rankings (status {login_response.status_code})"
                 )
                 return None
             resp = session.get(TEAMS_POINTS_URL, timeout=REQUEST_TIMEOUT_SECONDS)
             if resp.status_code != 200:
                 print(
-                    f"❌ Failed to fetch teams points page. Status {resp.status_code}"
+                    f"Error: Failed to fetch teams rankings page (status {resp.status_code})"
                 )
                 return None
             soup = BeautifulSoup(resp.content, "html.parser")
             table = soup.find("table")
             if not table:
-                print("❌ Could not find teams points table on page.")
+                print("Error: Could not find teams rankings table on page.")
                 return None
             rows = table.find_all("tr")[1:]  # skip header
             extracted = []
@@ -251,13 +265,12 @@ def scrape_teams_points():
                         "members": members,
                     }
                 )
-            print(f"✅ Scraped {len(extracted)} teams from rankings page")
             return extracted
     except requests.RequestException as e:
-        print(f"❌ Network error during teams points scraping: {e}")
+        print(f"Error: Network error while scraping team rankings: {e}")
         return None
     except Exception as e:
-        print(f"❌ Unexpected error during teams points scraping: {e}")
+        print(f"Error: Unexpected error while scraping team rankings: {e}")
         return None
 
 
@@ -265,7 +278,6 @@ def save_teams_points_to_csv(teams_points):
     """Save teams points ranking data to CSV in SCRAPED_TEAMS_POINTS_FOLDER.
     Columns: Date, Rank, Name, 90_days, 180_days, total_points, members"""
     if not teams_points:
-        print("❌ No teams points data to save")
         return None
     ensure_output_folder()
     now = datetime.now()
@@ -298,17 +310,14 @@ def save_teams_points_to_csv(teams_points):
                         row["members"],
                     ]
                 )
-        print(f"💾 Saved teams points rankings to {path}")
         return path
     except Exception as e:
-        print(f"❌ Error saving teams points CSV: {e}")
+        print(f"Error: Failed to save teams rankings CSV: {e}")
         return None
 
 
 def scrape_team_data():
     """Scrape team data from SheepIt renderfarm"""
-    print("🔄 Starting SheepIt team data scraping...")
-
     # Login payload
     payload = {
         "login": USERNAME,
@@ -316,24 +325,22 @@ def scrape_team_data():
     }
 
     try:
-        # Start session and login
-        print("🔑 Logging into SheepIt...")
+        print("Logging into SheepIt")
         with requests.session() as session:
             login_response = session.post(
                 LOGIN_URL, data=payload, timeout=REQUEST_TIMEOUT_SECONDS
             )
 
             if login_response.status_code != 200:
-                print(f"❌ Login failed with status code: {login_response.status_code}")
+                print(f"Error: Login failed (status {login_response.status_code})")
                 return None
 
-            # Get team page
-            print("📊 Fetching team data...")
+            print("Fetching team data")
             team_response = session.get(TEAM_URL, timeout=REQUEST_TIMEOUT_SECONDS)
 
             if team_response.status_code != 200:
                 print(
-                    f"❌ Failed to get team page. Status code: {team_response.status_code}"
+                    f"Error: Failed to fetch team page (status {team_response.status_code})"
                 )
                 return None
 
@@ -342,7 +349,7 @@ def scrape_team_data():
             table = soup.find("table")
 
             if not table:
-                print("❌ Could not find team table on the page.")
+                print("Error: Could not find team table on the page.")
                 return None
 
             # Extract data from table
@@ -375,21 +382,20 @@ def scrape_team_data():
                     }
                 )
 
-            print(f"✅ Successfully scraped data for {len(team_data)} team members")
+            print("Successfully scraped data")
             return team_data
 
     except requests.RequestException as e:
-        print(f"❌ Network error during scraping: {e}")
+        print(f"Error: Network error while scraping team data: {e}")
         return None
     except Exception as e:
-        print(f"❌ Unexpected error during scraping: {e}")
+        print(f"Error: Unexpected error while scraping team data: {e}")
         return None
 
 
 def save_team_data_to_csv(team_data):
     """Save team data to CSV file in the Scraped_Team_Info folder"""
     if not team_data:
-        print("❌ No team data to save")
         return None
 
     # Ensure output folder exists
@@ -402,8 +408,6 @@ def save_team_data_to_csv(team_data):
     csv_filepath = os.path.join(SCRAPED_TEAM_INFO_FOLDER, csv_filename)
 
     try:
-        # Write CSV file
-        print(f"💾 Saving data to: {csv_filepath}")
         with open(csv_filepath, "w", newline="", encoding="utf-8") as csvfile:
             # Use the full format that matches existing files for probation tracking
             writer = csv.writer(csvfile)
@@ -420,56 +424,47 @@ def save_team_data_to_csv(team_data):
                     ]
                 )
 
-        print(f"✅ Successfully saved {len(team_data)} records to {csv_filename}")
         return csv_filepath
 
     except Exception as e:
-        print(f"❌ Error saving CSV file: {e}")
+        print(f"Error: Failed to save team CSV: {e}")
         return None
 
 
 def trigger_notifications():
     """Trigger notification processing by calling the probation data endpoint"""
     if not TEAM_PROBATION_URL:
-        print("⚠️  IBU Dashboard URL not configured in config.toml")
+        print("Warning: team_probation_url is not configured in config.toml")
         return False
 
     try:
-        print("📧 Triggering notification processing...")
         response = requests.get(TEAM_PROBATION_URL, timeout=REQUEST_TIMEOUT_SECONDS)
 
         if response.status_code == 200:
-            print("✅ Successfully triggered notification processing")
             return True
         else:
             print(
-                f"⚠️  Notification endpoint responded with status code: {response.status_code}"
+                f"Warning: Notification endpoint responded with status {response.status_code}"
             )
             return False
 
     except requests.RequestException as e:
-        print(f"❌ Failed to trigger notifications: {e}")
+        print(f"Error: Failed to trigger notifications: {e}")
         return False
     except Exception as e:
-        print(f"❌ Unexpected error triggering notifications: {e}")
+        print(f"Error: Unexpected error while triggering notifications: {e}")
         return False
 
 
 def main():
     """Main function to run the scraper"""
-    print("🚀 SheepIt Team Data Scraper - Local Version")
+    print(_format_run_timestamp())
     print("=" * 50)
-    print(f"🧭 Config path: {CONFIG_PATH}")
-    print(f"🗂️ Team info output: {SCRAPED_TEAM_INFO_FOLDER}")
-    print(f"🗂️ Team rankings output: {SCRAPED_TEAMS_POINTS_FOLDER}")
 
     # Check credentials
     if USERNAME == "your_username_here" or PASSWORD == "your_password_here":
-        print("⚠️  WARNING: Please set your SheepIt credentials in config.toml!")
-        print(f"Expected config file: {CONFIG_PATH}")
-        print(
-            "Copy config.toml.example to config.toml and fill in scraper.sheepit.username/password."
-        )
+        print("Error: Missing SheepIt credentials in config.toml")
+        print("=" * 50)
         return
 
     # Scrape team member points page
@@ -488,27 +483,14 @@ def main():
 
     success_any = bool(members_csv_path or rankings_csv_path)
     if success_any:
-        print("=" * 50)
-        print("🎉 Scraping run summary")
-        if members_csv_path:
-            print(f"• Members file: {members_csv_path} ({len(team_data)} rows)")
-        if rankings_csv_path:
-            print(f"• Rankings file: {rankings_csv_path} ({len(teams_points)} rows)")
-        print(
-            "\n💡 The dashboard will automatically detect new member file(s) within 30 seconds."
-        )
         # Slight delay then trigger dashboard refresh (only once)
         if TRIGGER_NOTIFICATIONS:
             time.sleep(2)
-            notification_success = trigger_notifications()
-            if notification_success:
-                print("✅ All processes completed successfully!")
-            else:
-                print("⚠️ Dashboard refresh request failed or not configured")
-        else:
-            print("ℹ️ Dashboard notification trigger is disabled in scraper config.")
+            trigger_notifications()
     else:
-        print("❌ No data scraped successfully (members or rankings)")
+        print("Error: No data scraped successfully")
+
+    print("=" * 50)
 
 
 if __name__ == "__main__":
