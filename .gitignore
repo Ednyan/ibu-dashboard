@@ -7,10 +7,13 @@ Scraped_Team_Info/
 Scraped_Teams_Points/
 config/
 discord_bot/
-.env
 notification_history/
 cache/
 static/tailwind.css
+
+# Config
+.env
+config.toml
 
 # IDEs
 .idea/
