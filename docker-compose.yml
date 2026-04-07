@@ -16,3 +16,4 @@ services:
       - ./docker/logs/:/ibu/logs
       - ./docker/notification_history/:/ibu/notification_history/
       - /etc/localtime:/etc/localtime:ro
+      - ./config.toml:/ibu/config.toml:ro
