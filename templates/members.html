@@ -35,7 +35,7 @@ content %}
   >
     <!-- Header row -->
     <div
-      class="hidden grid-cols-12 gap-3 border-b border-white/10 px-4 py-3 text-xs font-semibold text-white/60 sm:grid"
+      class="hidden grid-cols-11 gap-3 border-b border-white/10 px-4 py-3 text-xs font-semibold text-white/60 sm:grid"
     >
       <div
         class="col-span-1 cursor-pointer sort-header flex items-center gap-1"
@@ -69,7 +69,7 @@ content %}
       </div>
 
       <div
-        class="col-span-3 cursor-pointer sort-header flex items-center gap-1"
+        class="col-span-2 cursor-pointer sort-header flex items-center gap-1"
         data-sort="status"
       >
         Probation Status
@@ -92,7 +92,7 @@ content %}
         data-status="{{ ps }}"
       >
         <div
-          class="grid grid-cols-1 gap-2 sm:grid-cols-12 sm:items-center sm:gap-3"
+          class="grid grid-cols-1 gap-2 sm:grid-cols-11 sm:items-center sm:gap-x-2 sm:gap-y-3"
         >
           <!-- Rank -->
           <div class="sm:col-span-1 sm:text-left pl-1">
@@ -134,7 +134,7 @@ content %}
           </div>
 
           <!-- Status -->
-          <div class="sm:col-span-3">
+          <div class="sm:col-span-2">
             <div class="text-xs text-white/50 sm:hidden">Status</div>
             <span
               class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ps in ['passed','completed'] %} bg-green-500/15 text-green-300 {% elif ps == 'failed' %} border-rose-400/25 bg-rose-400/15 text-rose-100 {% else %} border-amber-400/25 bg-amber-400/15 text-amber-100 {% endif %}"
@@ -146,7 +146,7 @@ content %}
           </div>
 
           <!-- Milestones -->
-          <div class="sm:col-span-2">
+          <div class="sm:col-span-2 sm:-ml-3">
             <div class="text-xs text-white/50 sm:hidden">Milestones</div>
 
             <div class="inline-flex rounded-full justify-center p-1">
