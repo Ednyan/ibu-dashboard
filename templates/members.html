@@ -69,14 +69,14 @@ content %}
       </div>
 
       <div
-        class="col-span-2 cursor-pointer sort-header flex items-center gap-1"
+        class="col-span-3 cursor-pointer sort-header flex items-center gap-1"
         data-sort="status"
       >
-        Status
+        Probation Status
         <span class="sort-icon"></span>
       </div>
 
-      <div class="col-span-3">Milestones</div>
+      <div class="col-span-2">Milestones</div>
     </div>
 
     <ul id="membersList" class="divide-y divide-x divide-white/10">
@@ -134,7 +134,7 @@ content %}
           </div>
 
           <!-- Status -->
-          <div class="sm:col-span-2">
+          <div class="sm:col-span-3">
             <div class="text-xs text-white/50 sm:hidden">Status</div>
             <span
               class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ps in ['passed','completed'] %} bg-green-500/15 text-green-300 {% elif ps == 'failed' %} border-rose-400/25 bg-rose-400/15 text-rose-100 {% else %} border-amber-400/25 bg-amber-400/15 text-amber-100 {% endif %}"
@@ -146,25 +146,19 @@ content %}
           </div>
 
           <!-- Milestones -->
-          <div class="sm:col-span-3">
+          <div class="sm:col-span-2">
             <div class="text-xs text-white/50 sm:hidden">Milestones</div>
 
-            <div class="grid grid-cols-3 gap-2">
+            <div class="inline-flex rounded-full justify-center p-1">
               {% macro milestone_cell(label, ms, align='left') %} {% set
               pos_class = 'left-0' if align == 'left' else ('left-1/2
               -translate-x-1/2' if align == 'center' else 'right-0') %}
               <div class="relative group milestone-cell">
-                <!-- Pill -->
                 <div
-                  class="milestone-pill inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if ms.passed is sameas(true) %}bg-green-500/15 {% elif ms.passed is sameas(false) %}bg-red-500/15 {% else %}bg-amber-200/15{% endif %}"
+                  class="milestone-pill inline-flex min-w-[2.75rem] items-center justify-center px-2 py-1 text-[11px] font-semibold {% if align == 'left' %}rounded-l-full{% elif align == 'right' %}rounded-r-full{% endif %} {% if ms.passed is sameas(true) %}bg-green-500/20 text-green-200{% elif ms.passed is sameas(false) %}bg-rose-500/20 text-rose-200{% else %}bg-amber-300/20 text-amber-100{% endif %}"
                 >
-                  <div
-                    class="text-[11px] font-semibold {% if ms.passed is sameas(true) %}text-green-300 {% elif ms.passed is sameas(false) %}text-rose-200 {% else %}text-amber-200{% endif %}"
-                  >
-                    {{ label }}
-                  </div>
+                  {{ label }}
                 </div>
-                <!-- More detailed overview -->
                 <div
                   class="milestone-tooltip pointer-events-none absolute {{ pos_class }} top-full z-50 mt-2 w-56 opacity-0 transition duration-150 ease-out group-hover:opacity-100"
                 >
@@ -216,9 +210,9 @@ content %}
                   </div>
                 </div>
               </div>
-              {% endmacro %} {{ milestone_cell('Week', w, 'left') }} {{
-              milestone_cell('Month 1', m1, 'center') }} {{
-              milestone_cell('Month 3', m3, 'right') }}
+              {% endmacro %} {{ milestone_cell('W1', w, 'left') }} {{
+              milestone_cell('M1', m1, 'center') }} {{ milestone_cell('M3', m3,
+              'right') }}
             </div>
           </div>
         </div>
