@@ -35,6 +35,7 @@ services:
       - ./docker/logs/:/ibu/logs
       - ./docker/notification_history/:/ibu/notification_history/
       - /etc/localtime:/etc/localtime:ro
+      - ./config.toml:/ibu/config.toml:ro
 ```
 
 - Copy the [env.example](../.env.example) file to `.env` and edit as needed.
