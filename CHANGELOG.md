@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0]
+
+### Added
+
+- Start to member page
+
+### Improved
+
+- Improved members page
+- Standardized some small things around the site
+
+---
+
 ## [1.2.5]
 
 ### Fixed
