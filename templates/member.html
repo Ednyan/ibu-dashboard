@@ -1,10 +1,283 @@
-{% extends "base.html" %} {% block title %}I.B.U. MEMBER INFO{% endblock %} {%
-block content %}
-<div class="flex">
-  <div
-    class="rounded-2xl border border-white/20 bg-black/10 p-10 text-center shadow-2xl backdrop-blur-xl"
+{% extends "base.html" %} {% block title %}{{ member.name }} | I.B.U. Member{%
+endblock %} {% block content %}
+<div class="mx-auto w-full max-w-6xl px-4 py-6">
+  {% set ps = member.probation_status %} {% set pp =
+  member.post_probation_status %} {% set w = member.milestones.week_1 %} {% set
+  m1 = member.milestones.month_1 %} {% set m3 = member.milestones.month_3 %} {%
+  macro status_badge(status) %}
+  <span
+    class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if status in ['passed','completed','compliant'] %}bg-green-500/15 text-green-300{% elif status in ['failed','non_compliant'] %}bg-rose-500/15 text-rose-200{% elif status in ['at_risk'] %}bg-orange-500/15 text-orange-200{% else %}bg-amber-400/15 text-amber-100{% endif %}"
   >
-    This page is in the works...
+    {% if status == 'in_progress' %}In Progress {% elif status == 'on_track' %}
+    On Track {% elif status == 'at_risk' %}At Risk {% elif status ==
+    'non_compliant' %}Non-Compliant {% elif status == 'too_early' %}Too Early {%
+    elif status == 'insufficient_data' %}Insufficient Data {% elif status ==
+    'passed' %}Passed {% elif status == 'failed' %}Failed {% elif status ==
+    'compliant' %}Compliant {% else %}{{ status|replace('_', ' ')|title }}{%
+    endif %}
+  </span>
+  {% endmacro %} {% macro stat_card(label, value, hint='') %}
+  <div class="rounded-2xl border border-white/10 bg-neutral-800 p-4 shadow-sm">
+    <div class="text-[11px] uppercase tracking-[0.18em] text-white/45">
+      {{ label }}
+    </div>
+    <div class="mt-2 text-2xl font-semibold text-white">{{ value }}</div>
+    {% if hint %}
+    <div class="mt-1 text-xs text-white/50">{{ hint }}</div>
+    {% endif %}
   </div>
+  {% endmacro %} {% macro milestone_card(label, milestone) %}
+  <div class="rounded-2xl border border-white/10 bg-neutral-800 p-4 shadow-sm">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <div class="text-sm font-semibold text-white">{{ label }}</div>
+        <div class="mt-1 text-xs text-white/50">
+          Deadline {{ milestone.deadline }}
+        </div>
+      </div>
+      <span
+        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium {% if milestone.passed is sameas(true) %}bg-green-500/15 text-green-300{% elif milestone.passed is sameas(false) %}bg-rose-500/15 text-rose-200{% else %}bg-amber-400/15 text-amber-100{% endif %}"
+      >
+        {% if milestone.passed is sameas(true) %}Passed {% elif milestone.passed
+        is sameas(false) %}Failed {% else %}Pending {% endif %}
+      </span>
+    </div>
+
+    <div class="mt-4 gap-3 text-sm">
+      <div class="rounded-xl bg-white/5 px-3 py-2">
+        <div class="text-[11px] uppercase tracking-wide text-white/45">
+          Target
+        </div>
+        <div class="mt-1 font-medium text-white">
+          {{ milestone.target|commas }}
+        </div>
+      </div>
+      <div class="rounded-xl bg-white/5 mt-2 px-3 py-2">
+        <div class="text-[11px] uppercase tracking-wide text-white/45">
+          At Deadline
+        </div>
+        <div class="mt-1 font-medium text-white">
+          {{ (milestone.points_at_deadline if milestone.points_at_deadline is
+          not none else member.current_points)|commas }}
+        </div>
+      </div>
+    </div>
+
+    {% if milestone.passed is none %}
+    <div class="mt-3 rounded-xl border border-white/10 bg-white/5 px-3 py-2">
+      <div class="text-xs text-white/70">
+        {% if milestone.days_left > 0 %}{{ milestone.remaining_points|commas }}
+        needed in {{ milestone.days_left }} day{{ 's' if milestone.days_left !=
+        1 else '' }}{% else %}{{ milestone.remaining_points|commas }} still
+        needed{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endmacro %}
+
+  <header
+    class="rounded-3xl border border-white/10 bg-neutral-800/95 p-5 shadow-sm"
+  >
+    <div
+      class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"
+    >
+      <div>
+        <a
+          href="{{ url_for('member_info') }}"
+          class="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs text-white/70 hover:bg-white/5"
+        >
+          Back to Members
+        </a>
+        <h1 class="mt-3 text-3xl font-semibold tracking-wide text-white">
+          {{ member.name }}
+        </h1>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          {{ status_badge(ps) }} {% if pp %} {{ status_badge(pp) }} {% endif %}
+        </div>
+        <p class="mt-3 text-sm text-white/65">
+          Joined {{ member.joined_date }} • {{ member.days_since_joined }} days
+          on the team
+        </p>
+      </div>
+
+      <div class="grid w-full gap-3 sm:grid-cols-2 lg:w-auto lg:min-w-76">
+        {{ stat_card('Current Points', member.current_points|commas) }} {{
+        stat_card('Current Rank', summary.current_rank if summary.current_rank
+        else 'N/A') }}
+      </div>
+    </div>
+
+    <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      {{ stat_card('7 Day Gain', summary.gain_7d|commas if summary.gain_7d is
+      not none else 'N/A') }} {{ stat_card('30 Day Gain',
+      summary.gain_30d|commas if summary.gain_30d is not none else 'N/A') }} {{
+      stat_card('90 Day Gain', summary.gain_90d|commas if summary.gain_90d is
+      not none else 'N/A') }} {{ stat_card('180 Day Gain',
+      summary.gain_180d|commas if summary.gain_180d is not none else 'N/A') }}
+    </div>
+  </header>
+
+  <section class="mt-4 grid gap-4 xl:grid-cols-[1.3fr_0.9fr]">
+    <div class="space-y-4">
+      <div
+        class="rounded-3xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-white">
+              Probation Milestones
+            </h2>
+            <p class="mt-1 text-sm text-white/55">
+              Progress across the first week, first month, and first three
+              months.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3 md:grid-cols-3">
+          {{ milestone_card('Week 1', w) }} {{ milestone_card('Month 1', m1) }}
+          {{ milestone_card('Month 3', m3) }}
+        </div>
+      </div>
+
+      <div
+        class="rounded-3xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-semibold text-white">Recent Checkpoints</h2>
+            <p class="mt-1 text-sm text-white/55">
+              Most recent saved snapshots for this member.
+            </p>
+          </div>
+          <div class="text-xs text-white/45">
+            {{ summary.history_points }} data point{{ 's' if
+            summary.history_points != 1 else '' }}
+          </div>
+        </div>
+
+        {% if recent_history %}
+        <div class="mt-4 overflow-hidden rounded-2xl border border-white/10">
+          <div
+            class="grid grid-cols-[1fr_auto] border-b border-white/10 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-white/45"
+          >
+            <div>Date</div>
+            <div>Points</div>
+          </div>
+          <div class="divide-y divide-white/10">
+            {% for item in recent_history %}
+            <div
+              class="grid grid-cols-[1fr_auto] items-center px-4 py-3 text-sm text-white/85"
+            >
+              <div>{{ item.date }}</div>
+              <div class="font-medium tabular-nums">
+                {{ item.points|commas }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div
+          class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60"
+        >
+          No checkpoint history is available for this member yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="space-y-4">
+      <div
+        class="rounded-3xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+      >
+        <h2 class="text-lg font-semibold text-white">Summary</h2>
+        <div class="mt-4 space-y-3 text-sm text-white/75">
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-white/50">Probation</span>
+            <span class="font-medium text-white"
+              >{{ ps|replace('_', ' ')|title }}</span
+            >
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-white/50">Post-Probation</span>
+            <span class="font-medium text-white">
+              {% if pp %}{{ pp|replace('_', ' ')|title }}{% else %}N/A{% endif
+              %}
+            </span>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-white/50">Joined</span>
+            <span class="font-medium text-white">{{ member.joined_date }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="rounded-3xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
+      >
+        <h2 class="text-lg font-semibold text-white">Post-Probation Periods</h2>
+        <p class="mt-1 text-sm text-white/55">
+          Recent 90-day compliance windows after probation is complete.
+        </p>
+
+        {% if member.post_probation_periods %}
+        <div class="mt-4 space-y-3">
+          {% for period in member.post_probation_periods|reverse %}
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-sm font-semibold text-white">
+                  Period {{ period.period_number }}
+                </div>
+                <div class="mt-1 text-xs text-white/50">
+                  {{ period.start_date }} to {{ period.end_date }}
+                </div>
+              </div>
+              {{ status_badge(period.status) }}
+            </div>
+
+            <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <div class="rounded-xl bg-black/10 px-3 py-2">
+                <div class="text-[11px] uppercase tracking-wide text-white/45">
+                  Earned
+                </div>
+                <div class="mt-1 font-medium text-white">
+                  {% if period.points_earned is not none %}{{
+                  period.points_earned|commas }}{% else %}N/A{% endif %}
+                </div>
+              </div>
+              <div class="rounded-xl bg-black/10 px-3 py-2">
+                <div class="text-[11px] uppercase tracking-wide text-white/45">
+                  Target
+                </div>
+                <div class="mt-1 font-medium text-white">
+                  {{ period.target_points|commas }}
+                </div>
+              </div>
+            </div>
+
+            {% if period.is_current_period and period.remaining_needed is
+            defined %}
+            <div class="mt-3 text-xs text-white/65">
+              {{ period.remaining_needed|commas }} remaining with {{
+              period.days_remaining }} days left. Daily pace needed: {{
+              period.daily_needed|round|int|commas }}.
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div
+          class="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/60"
+        >
+          No post-probation periods are available yet for this member.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
 </div>
 {% endblock %}

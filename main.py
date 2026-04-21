@@ -1746,6 +1746,127 @@ def _points_on_exact_date(member: str, exact_date: datetime, points_by_date):
     return mp.get(member)
 
 
+def _points_on_or_before(
+    member: str, target_date: datetime, dates_sorted, points_by_date
+):
+    """Find the closest CSV date <= target_date and return that member's points."""
+    i = bisect_left(dates_sorted, target_date)
+    if i < len(dates_sorted) and dates_sorted[i] == target_date:
+        mp = points_by_date.get(dates_sorted[i])
+        return mp.get(member) if mp else None
+
+    i -= 1
+    while i >= 0:
+        d = dates_sorted[i]
+        mp = points_by_date.get(d)
+        if mp is not None and member in mp:
+            return mp[member]
+        i -= 1
+    return None
+
+
+def _find_member_with_history(member_name: str):
+    """Return member detail payload for the member page, or None if not found."""
+    probation_data = check_probation_cache() or {}
+    members = (
+        probation_data.get("members", []) if isinstance(probation_data, dict) else []
+    )
+    if not members:
+        return None
+
+    selected_member = next((m for m in members if m.get("name") == member_name), None)
+    if selected_member is None:
+        lowered = member_name.lower()
+        selected_member = next(
+            (m for m in members if str(m.get("name", "")).lower() == lowered), None
+        )
+    if selected_member is None:
+        return None
+
+    csv_files = get_csv_files_from_folder()
+    if not csv_files:
+        return {"member": selected_member, "history": [], "summary": {}}
+
+    dates_sorted, points_by_date = _build_points_index(csv_files)
+    history = []
+    for d in dates_sorted:
+        points = points_by_date.get(d, {}).get(selected_member["name"])
+        if points is None:
+            continue
+        history.append(
+            {
+                "date": d.strftime("%Y-%m-%d"),
+                "points": int(points),
+            }
+        )
+
+    current_points = int(selected_member.get("current_points", 0))
+    current_date = datetime.now()
+
+    def gain_for_days(days: int):
+        baseline = _points_on_or_before(
+            selected_member["name"],
+            current_date - timedelta(days=days),
+            dates_sorted,
+            points_by_date,
+        )
+        if baseline is None:
+            return None
+        return max(0, current_points - int(baseline))
+
+    latest_file = csv_files[0]
+    latest_df = pd.read_csv(latest_file)
+    latest_df = _normalize_cols(latest_df)
+    current_rank = None
+    if "Member" in latest_df.columns and "Points" in latest_df.columns:
+        try:
+            latest_df["Points"] = pd.to_numeric(
+                latest_df["Points"], errors="coerce"
+            ).fillna(0)
+            latest_df = latest_df.sort_values(
+                by=["Points", "Member"], ascending=[False, True]
+            ).reset_index(drop=True)
+            matched_rows = latest_df.index[
+                latest_df["Member"].astype(str).str.lower()
+                == selected_member["name"].lower()
+            ]
+            if len(matched_rows) > 0:
+                current_rank = int(matched_rows[0]) + 1
+        except Exception:
+            current_rank = None
+
+    first_points = history[0]["points"] if history else None
+    total_gain = (
+        max(0, current_points - int(first_points)) if first_points is not None else None
+    )
+
+    recent_history = history[-8:][::-1]
+
+    summary = {
+        "current_rank": current_rank,
+        "tracking_started": history[0]["date"] if history else None,
+        "latest_snapshot": history[-1]["date"] if history else None,
+        "tracked_days": len(history),
+        "total_gain": total_gain,
+        "gain_7d": gain_for_days(7),
+        "gain_30d": gain_for_days(30),
+        "gain_90d": gain_for_days(90),
+        "gain_180d": gain_for_days(180),
+        "history_points": len(history),
+        "first_points": first_points,
+        "has_post_probation_periods": bool(
+            selected_member.get("post_probation_periods")
+        ),
+    }
+
+    return {
+        "member": selected_member,
+        "history": history,
+        "recent_history": recent_history,
+        "summary": summary,
+    }
+
+
 def get_member_probation_status():
     """Calculate probation status for all members"""
     try:
@@ -1761,6 +1882,21 @@ def get_member_probation_status():
         latest_file = csv_files[0]
         latest_df = pd.read_csv(latest_file)
         latest_df = _normalize_cols(latest_df)
+        prev_points_map = {}
+        if len(csv_files) > 1:
+            previous_file = csv_files[1]
+            prev_df = pd.read_csv(previous_file)
+            prev_df = _normalize_cols(prev_df)
+            if "Member" in prev_df.columns and "Points" in prev_df.columns:
+                prev_df["Points"] = pd.to_numeric(
+                    prev_df["Points"], errors="coerce"
+                ).fillna(0)
+                prev_points_map = dict(
+                    zip(
+                        prev_df["Member"].astype(str).str.strip(),
+                        prev_df["Points"],
+                    )
+                )
 
         if "Member" not in latest_df.columns or "Points" not in latest_df.columns:
             return {
@@ -1791,6 +1927,11 @@ def get_member_probation_status():
                     continue
 
                 days_since_joined = (current_date - joined_date).days
+                gain_24h = (
+                    int(current_points - prev_points_map.get(member_name.strip(), 0))
+                    if prev_points_map
+                    else None
+                )
 
                 week_1_target = 250000
                 month_1_target = 1000000
@@ -2040,6 +2181,7 @@ def get_member_probation_status():
                     "joined_date_parsed": joined_date.strftime("%Y-%m-%d"),
                     "days_since_joined": days_since_joined,
                     "current_points": current_points,
+                    "gain_24h": gain_24h,
                     "probation_status": probation_status,
                     "post_probation_status": post_probation_status,
                     "post_probation_periods": post_probation_periods,
@@ -2101,7 +2243,35 @@ def get_member_probation_status():
 
 @app.route("/member/<member>")
 def member(member):
-    return render_template("member.html")
+    detail = _find_member_with_history(member)
+    if detail is None:
+        return (
+            render_template(
+                "error.html",
+                code=404,
+                name="Member Not Found",
+                description=f"No tracked member named '{member}' was found.",
+            ),
+            404,
+        )
+
+    file_path, date_str, file_timestamp = get_latest_csv_file()
+    latest_date = (
+        datetime.strptime(date_str, "%Y-%m-%d").strftime("%B %d, %Y")
+        if date_str and date_str != "unknown"
+        else "Unknown"
+    )
+    time_ago = get_time_ago_string(file_timestamp) if file_timestamp else "Recently"
+
+    return render_template(
+        "member.html",
+        member=detail["member"],
+        summary=detail["summary"],
+        recent_history=detail["recent_history"],
+        history=detail["history"],
+        latest_date=latest_date,
+        time_ago=time_ago,
+    )
 
 
 @app.route("/member_info")
@@ -2114,6 +2284,7 @@ def member_info():
     """Member info page with probation tracking"""
     try:
         file_path, date_str, file_timestamp = get_latest_csv_file()
+        prev_file_path, _, _ = get_csv_file_by_index(1)
 
         if file_path:
             latest_date = (
@@ -2128,6 +2299,26 @@ def member_info():
 
         probation_data = check_probation_cache()
         members = probation_data.get("members", []) if probation_data else []
+        members = [dict(m) for m in members]
+
+        prev_points_map = {}
+        if prev_file_path and os.path.exists(prev_file_path):
+            prev = pd.read_csv(prev_file_path)
+            prev.columns = prev.columns.str.strip()
+            prev = prev.rename(columns={"name": "Member", "points": "Points"})
+            prev["Points"] = pd.to_numeric(prev["Points"], errors="coerce").fillna(0)
+            prev_points_map = dict(
+                zip(prev["Member"].astype(str).str.strip(), prev["Points"])
+            )
+
+        for m in members:
+            if prev_points_map:
+                m["gain_24h"] = int(
+                    int(m.get("current_points", 0))
+                    - prev_points_map.get(str(m.get("name", "")).strip(), 0)
+                )
+            else:
+                m["gain_24h"] = None
 
         return render_template(
             "members.html",
