@@ -1948,7 +1948,9 @@ def get_member_probation_status():
                 month_1_points = _points_on_or_after(
                     member_name, month_1_date, dates_sorted, points_by_date
                 )
-                month_3_points = current_points  # current total
+                month_3_points = _points_on_or_before(
+                    member_name, month_3_date, dates_sorted, points_by_date
+                )
 
                 week_1_remaining = max(0, week_1_target - current_points)
                 month_1_remaining = max(0, month_1_target - current_points)
@@ -1979,7 +1981,12 @@ def get_member_probation_status():
 
                 month_3_passed = None
                 if current_date >= month_3_date:
-                    month_3_passed = month_3_points >= month_3_target
+                    if month_3_points is not None:
+                        month_3_passed = month_3_points >= month_3_target
+                    else:
+                        month_3_passed = (
+                            True if current_points >= month_3_target else None
+                        )
                 else:
                     month_3_passed = True if current_points >= month_3_target else None
 
@@ -2211,7 +2218,7 @@ def get_member_probation_status():
                         "month_3": {
                             "target": month_3_target,
                             "points_at_deadline": month_3_points,
-                            "has_historical_data": True,
+                            "has_historical_data": month_3_points is not None,
                             "passed": month_3_passed,
                             "deadline": month_3_date.strftime("%Y-%m-%d"),
                             "remaining_points": month_3_remaining,

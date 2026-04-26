@@ -57,8 +57,8 @@ endblock %} {% block content %}
           At Deadline
         </div>
         <div class="mt-1 font-medium text-white">
-          {{ (milestone.points_at_deadline if milestone.points_at_deadline is
-          not none else member.current_points)|commas }}
+          {% if milestone.points_at_deadline is not none %}{{
+          milestone.points_at_deadline|commas }}{% else %}N/A{% endif %}
         </div>
       </div>
     </div>
