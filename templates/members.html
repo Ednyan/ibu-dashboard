@@ -271,6 +271,9 @@ content %}
     column: "rank",
     asc: true,
   };
+  const defaultSortAsc = {
+    gain24: false,
+  };
 
   function formatOrdinal(n) {
     const mod100 = n % 100;
@@ -316,7 +319,8 @@ content %}
         currentSort.asc = !currentSort.asc;
       } else {
         currentSort.column = column;
-        currentSort.asc = true;
+        currentSort.asc =
+          defaultSortAsc[column] !== undefined ? defaultSortAsc[column] : true;
       }
 
       sortMembers(column, currentSort.asc);
