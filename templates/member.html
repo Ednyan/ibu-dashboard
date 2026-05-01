@@ -121,6 +121,63 @@ endblock %} {% block content %}
   <section class="mt-4 grid gap-4 xl:grid-cols-[1.3fr_0.9fr]">
     <div class="space-y-4">
       <div
+        class="rounded-2xl border border-white/10 bg-neutral-800 px-4 py-3 shadow-sm"
+      >
+        {% if summary.average_rows %}
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="text-sm font-semibold text-white">Average Points</div>
+            <label class="flex items-center gap-2">
+              <span class="text-xs text-white/45">Per</span>
+              <select
+                id="averageUnitSelect"
+                class="h-9 w-28 rounded-lg border border-white/10 bg-white/5 px-2 text-sm text-white outline-none focus:border-emerald-400/60"
+              >
+                {% for row in summary.average_rows %}
+                <option class="text-black bg-white" value="{{ row.unit }}">
+                  {{ row.unit|title }}
+                </option>
+                {% endfor %}
+              </select>
+            </label>
+
+            <label class="flex items-center gap-2">
+              <span class="text-xs text-white/45">Over</span>
+              <select
+                id="averageWindowSelect"
+                class="h-9 w-36 rounded-lg border border-white/10 bg-white/5 px-2 text-sm text-white outline-none focus:border-emerald-400/60"
+              >
+                {% for window in summary.average_windows %}
+                <option class="text-black bg-white" value="{{ window.key }}">
+                  {{ window.label }}
+                </option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+
+          <div class="flex items-baseline gap-2">
+            <div
+              id="averagePaceValue"
+              class="text-2xl font-semibold text-white tabular-nums"
+            >
+              N/A
+            </div>
+            <div id="averagePaceLabel" class="text-xs text-white/50">
+              points/sec over last week
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div
+          class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white/60"
+        >
+          No average pace data is available for this member yet.
+        </div>
+        {% endif %}
+      </div>
+
+      <div
         class="rounded-3xl border border-white/10 bg-neutral-800 p-5 shadow-sm"
       >
         <div class="flex items-center justify-between gap-3">
@@ -280,4 +337,41 @@ endblock %} {% block content %}
     </div>
   </section>
 </div>
-{% endblock %}
+{% if summary.average_rows %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const averageRows = {{ summary.average_rows|tojson }};
+    const averageWindows = {{ summary.average_windows|tojson }};
+    const units = new Map(
+      averageRows.map((row) => [
+        row.unit,
+        new Map(row.values.map((item) => [item.window, item.formatted])),
+      ]),
+    );
+    const windows = new Map(
+      averageWindows.map((window) => [
+        window.key,
+        window.key === "all"
+          ? "over all time"
+          : `over last ${window.label.toLowerCase()}`,
+      ]),
+    );
+    const unitSelect = document.getElementById("averageUnitSelect");
+    const windowSelect = document.getElementById("averageWindowSelect");
+    const value = document.getElementById("averagePaceValue");
+    const label = document.getElementById("averagePaceLabel");
+    windowSelect.value = windows.has("7d") ? "7d" : averageWindows[0]?.key;
+
+    const updateAveragePace = () => {
+      const unit = unitSelect.value;
+      const windowKey = windowSelect.value;
+      value.textContent = units.get(unit)?.get(windowKey) ?? "N/A";
+      label.textContent = `points/${unit} ${windows.get(windowKey) ?? ""}`;
+    };
+
+    unitSelect.addEventListener("change", updateAveragePace);
+    windowSelect.addEventListener("change", updateAveragePace);
+    updateAveragePace();
+  });
+</script>
+{% endif %} {% endblock %}

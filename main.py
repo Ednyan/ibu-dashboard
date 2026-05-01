@@ -1765,6 +1765,23 @@ def _points_on_or_before(
     return None
 
 
+def _format_points_rate(value):
+    if value is None:
+        return "N/A"
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return "N/A"
+
+    if value == 0:
+        return "0"
+    if abs(value) >= 10:
+        return f"{int(round(value)):,}"
+    if abs(value) >= 1:
+        return f"{value:,.1f}"
+    return f"{value:,.2f}"
+
+
 def _find_member_with_history(member_name: str):
     """Return member detail payload for the member page, or None if not found."""
     probation_data = check_probation_cache() or {}
@@ -1814,6 +1831,65 @@ def _find_member_with_history(member_name: str):
             return None
         return max(0, current_points - int(baseline))
 
+    average_windows = [
+        {"key": "1d", "label": "Day", "days": 1},
+        {"key": "7d", "label": "Week", "days": 7},
+        {"key": "30d", "label": "Month", "days": 30},
+        {"key": "90d", "label": "90 Days", "days": 90},
+        {"key": "180d", "label": "180 Days", "days": 180},
+        {"key": "365d", "label": "Year", "days": 365},
+        {"key": "all", "label": "All Time", "days": None},
+    ]
+    average_units = [
+        {"label": "sec", "seconds": 1},
+        {"label": "min", "seconds": 60},
+        {"label": "hour", "seconds": 60 * 60},
+        {"label": "day", "seconds": 60 * 60 * 24},
+        {"label": "week", "seconds": 60 * 60 * 24 * 7},
+        {"label": "month", "seconds": 60 * 60 * 24 * 30},
+    ]
+    first_points = history[0]["points"] if history else None
+    total_gain = (
+        max(0, current_points - int(first_points)) if first_points is not None else None
+    )
+    all_time_seconds = None
+    if history:
+        try:
+            tracking_started = datetime.strptime(history[0]["date"], "%Y-%m-%d")
+            all_time_seconds = max(
+                1, int((current_date - tracking_started).total_seconds())
+            )
+        except Exception:
+            all_time_seconds = None
+
+    gains_by_window = {}
+    seconds_by_window = {}
+    for window in average_windows:
+        if window["key"] == "all":
+            gains_by_window[window["key"]] = total_gain
+            seconds_by_window[window["key"]] = all_time_seconds
+        else:
+            gains_by_window[window["key"]] = gain_for_days(window["days"])
+            seconds_by_window[window["key"]] = window["days"] * 24 * 60 * 60
+
+    average_rows = []
+    for unit in average_units:
+        values = []
+        for window in average_windows:
+            gain = gains_by_window[window["key"]]
+            window_seconds = seconds_by_window[window["key"]]
+            rate = None
+            if gain is not None and window_seconds:
+                rate = gain * unit["seconds"] / window_seconds
+            values.append(
+                {
+                    "window": window["key"],
+                    "value": rate,
+                    "formatted": _format_points_rate(rate),
+                }
+            )
+        average_rows.append({"unit": unit["label"], "values": values})
+
     latest_file = csv_files[0]
     latest_df = pd.read_csv(latest_file)
     latest_df = _normalize_cols(latest_df)
@@ -1835,11 +1911,6 @@ def _find_member_with_history(member_name: str):
         except Exception:
             current_rank = None
 
-    first_points = history[0]["points"] if history else None
-    total_gain = (
-        max(0, current_points - int(first_points)) if first_points is not None else None
-    )
-
     recent_history = history[-8:][::-1]
 
     summary = {
@@ -1848,10 +1919,14 @@ def _find_member_with_history(member_name: str):
         "latest_snapshot": history[-1]["date"] if history else None,
         "tracked_days": len(history),
         "total_gain": total_gain,
-        "gain_7d": gain_for_days(7),
-        "gain_30d": gain_for_days(30),
-        "gain_90d": gain_for_days(90),
-        "gain_180d": gain_for_days(180),
+        "gain_1d": gains_by_window["1d"],
+        "gain_7d": gains_by_window["7d"],
+        "gain_30d": gains_by_window["30d"],
+        "gain_90d": gains_by_window["90d"],
+        "gain_180d": gains_by_window["180d"],
+        "gain_365d": gains_by_window["365d"],
+        "average_windows": average_windows,
+        "average_rows": average_rows,
         "history_points": len(history),
         "first_points": first_points,
         "has_post_probation_periods": bool(
